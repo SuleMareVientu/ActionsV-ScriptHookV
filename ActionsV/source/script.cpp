@@ -7,6 +7,7 @@
 #include "globals.h"
 #include "utils\ini.h"
 #include "utils\functions.h"
+#include "utils\actions.h"
 
 Player player = NULL;
 Ped playerPed = NULL;
@@ -23,13 +24,13 @@ static void update()
 
 	playerLoc = ENTITY::GET_ENTITY_COORDS(playerPed, false);
 
-
+	SmokingSequence::UpdateSequence();
 	return;
 }
 
 void ScriptMain()
 {
-	ReadINI();
+	//ReadINI();
 	while (true)
 	{
 		update();

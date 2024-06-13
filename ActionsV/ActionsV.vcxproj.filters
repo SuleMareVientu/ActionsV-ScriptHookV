@@ -10,7 +10,7 @@
       <Filter>utils</Filter>
     </ClCompile>
     <ClCompile Include="source\globals.h" />
-    <ClCompile Include="source\utils\peds.cpp">
+    <ClCompile Include="source\utils\actions.cpp">
       <Filter>utils</Filter>
     </ClCompile>
   </ItemGroup>
@@ -22,7 +22,7 @@
     <ClInclude Include="source\utils\functions.h">
       <Filter>utils</Filter>
     </ClInclude>
-    <ClInclude Include="source\utils\peds.h">
+    <ClInclude Include="source\utils\actions.h">
       <Filter>utils</Filter>
     </ClInclude>
   </ItemGroup>

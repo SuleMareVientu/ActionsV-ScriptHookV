@@ -5,7 +5,7 @@
 void ReadINI()
 {
 	CSimpleIniA ini;
-	SI_Error res = ini.LoadFile("GameplayFixesV.ini");
+	SI_Error res = ini.LoadFile("ActionsV.ini");
 
 	if (res != SI_OK)
 		return;
