@@ -46,6 +46,7 @@ void DisablePedResetFlag(Ped ped, int flag)
 	return;
 }
 
+/*
 void Print(char* string, int ms)
 {
 	BEGIN_TEXT_COMMAND_PRINT("STRING");
@@ -67,6 +68,15 @@ void PrintFloat(float value, int ms)
 	BEGIN_TEXT_COMMAND_PRINT("NUMBER");
 	ADD_TEXT_COMPONENT_FLOAT(value, 4);
 	END_TEXT_COMMAND_PRINT(ms, 1);
+	return;
+}
+*/
+
+void PrintHelp(char* string, bool playSound, int overrideDuration)
+{
+	BEGIN_TEXT_COMMAND_DISPLAY_HELP("STRING");
+	ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME(string);
+	END_TEXT_COMMAND_DISPLAY_HELP(NULL, false, playSound, overrideDuration);
 	return;
 }
 

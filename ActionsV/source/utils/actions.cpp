@@ -279,6 +279,7 @@ void UpdateSequence()
 		else if (IS_ENTITY_PLAYING_ANIM(playerPed, smokeBaseAnimDict, smokeBaseAnim, 3) &&
 			GET_ENTITY_ANIM_CURRENT_TIME(playerPed, smokeBaseAnimDict, smokeBaseAnim) == 1.0f)
 		{
+			PrintHelp("Press ~INPUT_JUMP~ to smoke, hold to stop.");
 			if (controlTimer.Get() < holdTime)
 			{
 				if (IS_DISABLED_CONTROL_JUST_RELEASED(PLAYER_CONTROL, smokingControl))
@@ -296,6 +297,7 @@ void UpdateSequence()
 		else if (IS_ENTITY_PLAYING_ANIM(playerPed, smokeEnterAnimDict, smokeEnterAnim, 3) &&
 			GET_ENTITY_ANIM_CURRENT_TIME(playerPed, smokeEnterAnimDict, smokeEnterAnim) == 1.0f)
 		{
+			PrintHelp("Press ~INPUT_JUMP~ to smoke, hold to stop.");
 			if (controlTimer.Get() < holdTime)
 			{
 				if (IS_DISABLED_CONTROL_JUST_RELEASED(PLAYER_CONTROL, smokingControl))
@@ -537,6 +539,7 @@ void UpdateSequence()
 		else if (IS_ENTITY_PLAYING_ANIM(playerPed, drinkingAnimDict, drinkingExitAnim, 3) &&
 			GET_ENTITY_ANIM_CURRENT_TIME(playerPed, drinkingAnimDict, drinkingExitAnim) == 1.0f)
 		{
+			PrintHelp("Press ~INPUT_JUMP~ to drink, hold to stop.");
 			if (controlTimer.Get() < holdTime)
 			{
 				if (IS_DISABLED_CONTROL_JUST_RELEASED(PLAYER_CONTROL, drinkingControl))
