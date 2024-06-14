@@ -6,23 +6,23 @@
     <ClCompile Include="source\utils\functions.cpp">
       <Filter>utils</Filter>
     </ClCompile>
-    <ClCompile Include="source\utils\ini.cpp">
-      <Filter>utils</Filter>
-    </ClCompile>
     <ClCompile Include="source\globals.h" />
     <ClCompile Include="source\utils\actions.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="source\utils\keyboard.cpp">
       <Filter>utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\script.h" />
-    <ClInclude Include="source\utils\ini.h">
-      <Filter>utils</Filter>
-    </ClInclude>
     <ClInclude Include="source\utils\functions.h">
       <Filter>utils</Filter>
     </ClInclude>
     <ClInclude Include="source\utils\actions.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="source\utils\keyboard.h">
       <Filter>utils</Filter>
     </ClInclude>
   </ItemGroup>

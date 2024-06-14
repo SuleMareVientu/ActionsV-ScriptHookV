@@ -96,28 +96,33 @@ bool RequestModel(Hash model)
 	return true;
 }
 
-Object CreateObject(Hash model, Vector3 loc, float rotX, float rotY, float rotZ)
+Object CreateObject(Hash model, float locX, float locY, float locZ, float rotX, float rotY, float rotZ)
 {
 	RequestModel(model);
-	Object obj = CREATE_OBJECT_NO_OFFSET(model, loc.x, loc.y, loc.z, false, false, false);
+	Object obj = CREATE_OBJECT_NO_OFFSET(model, locX, locY, locZ, false, false, false);
 	if (rotX != NULL || rotY != NULL || rotZ != NULL)
 		SET_ENTITY_ROTATION(obj, rotX, rotY, rotZ, 2, false);
 	return obj;
 }
 
-void DeleteObject(Object obj)
+void DeleteObject(Object* obj)
 {
-	if (DOES_ENTITY_EXIST(obj))
+	if (DOES_ENTITY_EXIST(*obj))
 	{
-		SET_ENTITY_AS_MISSION_ENTITY(obj, true, true);
-		DELETE_OBJECT(&obj);
+		SET_ENTITY_AS_MISSION_ENTITY(*obj, true, true);
+		DELETE_OBJECT(obj);
 	}
 	return;
 }
 
 bool AdditionalChecks(Ped ped)
 {
-	if (IS_PED_RAGDOLL(ped) ||
+	if (!DOES_ENTITY_EXIST(ped) ||
+		IS_ENTITY_DEAD(ped, false) ||
+		IS_PED_DEAD_OR_DYING(ped, true) ||
+		IS_PED_INJURED(ped) ||
+		IS_PED_USING_ANY_SCENARIO(ped) ||
+		IS_PED_RAGDOLL(ped) ||
 		IS_PED_GETTING_UP(ped) ||
 		IS_PED_FALLING(ped) ||
 		IS_PED_JUMPING(ped) ||

@@ -5,13 +5,11 @@
 //Custom
 #include "script.h"
 #include "globals.h"
-#include "utils\ini.h"
 #include "utils\functions.h"
 #include "utils\actions.h"
 
 Player player = NULL;
 Ped playerPed = NULL;
-Vector3 playerLoc{ NULL, NULL, NULL, NULL, NULL, NULL };
 
 static void update()
 {
@@ -22,15 +20,12 @@ static void update()
 	if (!ENTITY::DOES_ENTITY_EXIST(playerPed) || !IS_PLAYER_CONTROL_ON(player))
 		return;
 
-	playerLoc = ENTITY::GET_ENTITY_COORDS(playerPed, false);
-
-	SmokingSequence::UpdateSequence();
+	UpdateSequences();
 	return;
 }
 
 void ScriptMain()
 {
-	//ReadINI();
 	while (true)
 	{
 		update();

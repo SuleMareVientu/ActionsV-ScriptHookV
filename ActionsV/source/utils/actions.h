@@ -1,5 +1,13 @@
 #pragma once
 
+void UpdateSequences();
+
 namespace SmokingSequence {
-    void UpdateSequence();
+bool IsSequenceActive();
+void UpdateSequence();
+}
+
+namespace DrinkingSequence {
+bool IsSequenceActive();
+void UpdateSequence();
 }
