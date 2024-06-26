@@ -46,7 +46,6 @@ void DisablePedResetFlag(Ped ped, int flag)
 	return;
 }
 
-/*
 void Print(char* string, int ms)
 {
 	BEGIN_TEXT_COMMAND_PRINT("STRING");
@@ -70,7 +69,6 @@ void PrintFloat(float value, int ms)
 	END_TEXT_COMMAND_PRINT(ms, 1);
 	return;
 }
-*/
 
 void PrintHelp(char* string, bool playSound, int overrideDuration)
 {
@@ -125,7 +123,7 @@ void DeleteObject(Object* obj)
 	return;
 }
 
-bool AdditionalChecks(Ped ped)
+bool AdditionalChecks(Ped ped, bool countEnemies)
 {
 	if (!DOES_ENTITY_EXIST(ped) ||
 		IS_ENTITY_DEAD(ped, false) ||
@@ -136,15 +134,14 @@ bool AdditionalChecks(Ped ped)
 		IS_PED_GETTING_UP(ped) ||
 		IS_PED_FALLING(ped) ||
 		IS_PED_JUMPING(ped) ||
-		IS_PED_IN_MELEE_COMBAT(ped) ||
 		IS_PED_IN_COVER(ped, false) ||
 		IS_PED_SHOOTING(ped) ||
 		!IS_PED_ON_FOOT(ped) ||
 		IS_PED_TAKING_OFF_HELMET(ped) ||
-		COUNT_PEDS_IN_COMBAT_WITH_TARGET(ped) > 0)
+		(countEnemies && (IS_PED_IN_MELEE_COMBAT(ped) || COUNT_PEDS_IN_COMBAT_WITH_TARGET(ped) > 0)))
 		return false;
-	else
-		return true;
+
+	return true;
 }
 
 void DisablePlayerActionsThisFrame()
@@ -247,5 +244,78 @@ void PlayAmbientSpeech(Ped ped, char* speechName)
 	AUDIO::SET_AUDIO_FLAG("IsDirectorModeActive", true);
 	AUDIO::PLAY_PED_AMBIENT_SPEECH_NATIVE(ped, speechName, "SPEECH_PARAMS_FORCE_NORMAL", false);
 	AUDIO::SET_AUDIO_FLAG("IsDirectorModeActive", false);
+	return;
+}
+
+static SCALEFORM_INSTRUCTIONAL_BUTTONS DisplayStruct;
+static int InstructionalButtonsScaleformIndex = NULL;
+void RunScaleformInstructionalButtons(bool refresh)
+{
+	if (!HAS_SCALEFORM_MOVIE_LOADED(InstructionalButtonsScaleformIndex))
+	{
+		InstructionalButtonsScaleformIndex = REQUEST_SCALEFORM_MOVIE("instructional_buttons");
+		SCALEFORM_INSTRUCTIONAL_BUTTONS tmp; DisplayStruct = tmp;	//Reset struct state
+		return;
+	}
+
+	if (refresh = true || HAVE_CONTROLS_CHANGED(FRONTEND_CONTROL))
+		DisplayStruct.bInitialised = false;
+
+	if (!DisplayStruct.bInitialised)
+	{
+
+		if (!HAS_SCALEFORM_MOVIE_LOADED(InstructionalButtonsScaleformIndex))
+			InstructionalButtonsScaleformIndex = REQUEST_SCALEFORM_MOVIE("instructional_buttons");
+		else
+		{
+			CALL_SCALEFORM_MOVIE_METHOD(InstructionalButtonsScaleformIndex, "CLEAR_ALL");
+
+			for (int i = 0; i < DisplayStruct.ButtonCount; i++) {
+				BEGIN_SCALEFORM_MOVIE_METHOD(InstructionalButtonsScaleformIndex, "SET_DATA_SLOT");
+
+				SCALEFORM_MOVIE_METHOD_ADD_PARAM_INT(i);
+
+				SCALEFORM_MOVIE_METHOD_ADD_PARAM_PLAYER_NAME_STRING(GET_CONTROL_INSTRUCTIONAL_BUTTONS_STRING(DisplayStruct.Buttons[i].iButtonSlotControl, DisplayStruct.Buttons[i].iButtonSlotInput, true));
+
+				BEGIN_TEXT_COMMAND_SCALEFORM_STRING("STRING");
+				ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME(DisplayStruct.Buttons[i].sText);
+				END_TEXT_COMMAND_SCALEFORM_STRING();
+
+				END_SCALEFORM_MOVIE_METHOD();
+			}
+
+			BEGIN_SCALEFORM_MOVIE_METHOD(InstructionalButtonsScaleformIndex, "TOGGLE_MOUSE_BUTTONS");
+			SCALEFORM_MOVIE_METHOD_ADD_PARAM_BOOL(false);
+			END_SCALEFORM_MOVIE_METHOD();
+
+			CALL_SCALEFORM_MOVIE_METHOD(InstructionalButtonsScaleformIndex, "DRAW_INSTRUCTIONAL_BUTTONS");
+			DisplayStruct.bInitialised = true;
+		}
+	}
+
+	HIDE_HUD_COMPONENT_THIS_FRAME(HUD_AREA_NAME);
+	HIDE_HUD_COMPONENT_THIS_FRAME(HUD_VEHICLE_NAME);
+	HIDE_HUD_COMPONENT_THIS_FRAME(HUD_DISTRICT_NAME);
+	HIDE_HUD_COMPONENT_THIS_FRAME(HUD_STREET_NAME);
+
+	DRAW_SCALEFORM_MOVIE_FULLSCREEN(InstructionalButtonsScaleformIndex, 0, 0, 0, 186, 0);	//HUD_COLOUR_INGAME_BG
+	return;
+}
+
+void AddScaleformInstructionalButton(int iButtonSlotControl, int iButtonSlotInput, char* sText, bool reset)
+{
+	if (reset)
+	{
+		SCALEFORM_INSTRUCTIONAL_BUTTONS tmp; DisplayStruct = tmp;	//Reset struct state
+	}
+
+	if (DisplayStruct.ButtonCount >= 12)
+		return;
+
+	int i = DisplayStruct.ButtonCount;
+	DisplayStruct.Buttons[i].iButtonSlotControl = iButtonSlotControl;
+	DisplayStruct.Buttons[i].iButtonSlotInput = iButtonSlotInput;
+	DisplayStruct.Buttons[i].sText = sText;
+	DisplayStruct.ButtonCount++;
 	return;
 }

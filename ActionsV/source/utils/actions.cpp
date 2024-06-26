@@ -8,6 +8,8 @@
 #include "..\globals.h"
 #include "..\script.h"
 
+static bool NoSequenceActive();
+
 namespace SmokingSequence {
 enum eSequenceState
 {
@@ -47,6 +49,7 @@ bool disabledControlsLastFrame = false;
 bool shouldPlayerStandStill = false;
 int sequenceState = FINISHED;
 int nextSequenceState = NULL;
+int forcedSequenceState = -2;
 char* lastAnimDict = NULL;
 char* lastAnim = NULL;
 Object item = NULL;
@@ -239,91 +242,111 @@ void PlaySmokingSequence()
 
 void StartSequence()
 {
-	sequenceState = STREAM_ASSETS_IN;
-	PlaySmokingSequence();
+	if (NoSequenceActive() && AdditionalChecks(playerPed))
+	{
+		sequenceState = STREAM_ASSETS_IN;
+		PlaySmokingSequence();
+	}
 	return;
 }
 
-static constexpr int smokingControl = INPUT_JUMP;
-bool AreStartControlsPressed()
+bool GetAnimHold(char** animDict, char** anim)
 {
-	if (// PAD: R3 + DPAD Left
-		(IS_DISABLED_CONTROL_JUST_PRESSED(FRONTEND_CONTROL, INPUT_FRONTEND_RS) && IS_DISABLED_CONTROL_PRESSED(FRONTEND_CONTROL, INPUT_FRONTEND_LEFT)) ||
-		(IS_DISABLED_CONTROL_PRESSED(FRONTEND_CONTROL, INPUT_FRONTEND_RS) && IS_DISABLED_CONTROL_JUST_PRESSED(FRONTEND_CONTROL, INPUT_FRONTEND_LEFT)) ||
-		//PC: U key
-		IsKeyJustUp(VK_U))
-		return true;
+	if (IS_ENTITY_PLAYING_ANIM(playerPed, smokeEnterAnimDict, smokeEnterAnim, 3) &&
+		GET_ENTITY_ANIM_CURRENT_TIME(playerPed, smokeEnterAnimDict, smokeEnterAnim) == 1.0f)
+	{
+		*animDict = smokeEnterAnimDict;
+		*anim = smokeEnterAnim;
+	}
+	else if (IS_ENTITY_PLAYING_ANIM(playerPed, smokeBaseAnimDict, smokeBaseAnim, 3) &&
+		GET_ENTITY_ANIM_CURRENT_TIME(playerPed, smokeBaseAnimDict, smokeBaseAnim) == 1.0f)
+	{
+		*animDict = smokeBaseAnimDict;
+		*anim = smokeBaseAnim;
+	}
+	else
+		return false;
 
-	return false;
+	return true;
+}
+
+void SetSequenceState(int state, bool shouldForceState)
+{
+	if (shouldForceState)
+		forcedSequenceState = state;
+
+	char* animDict = ""; char* anim = "";
+	if (!GetAnimHold(&animDict, &anim))
+		return;
+
+	STOP_ANIM_TASK(playerPed, animDict, anim, -2.0f);
+
+	if (state <= -1 && sequenceState != EXITING && sequenceState != FLUSH_ASSETS)
+		sequenceState = EXITING;
+	else
+		sequenceState = state;
+
+	return;
 }
 
 Timer controlTimer;
 constexpr int holdTime = 250;
+constexpr int smokingControl = PLAYER_CONTROL;
+constexpr int smokingInput = INPUT_JUMP;
+void UpdateControls()
+{
+	char* animDict = ""; char* anim = "";
+	if (!GetAnimHold(&animDict, &anim))
+		return;
+
+	AddScaleformInstructionalButton(smokingControl, smokingInput, "Smoke (hold to stop)", true);
+	RunScaleformInstructionalButtons();
+
+	if (IS_DISABLED_CONTROL_JUST_PRESSED(smokingControl, smokingInput))
+	{
+		controlTimer.Set(0);
+		return;
+	}
+
+	if (controlTimer.Get() < holdTime)
+	{
+		if (IS_DISABLED_CONTROL_JUST_RELEASED(smokingControl, smokingInput))
+			SetSequenceState(LOOP);
+	}
+	else if (IS_DISABLED_CONTROL_PRESSED(smokingControl, smokingInput))
+		SetSequenceState(EXITING);
+
+	return;
+}
+
 void UpdateSequence()
 {
-	if (sequenceState != FINISHED && (!DOES_ENTITY_EXIST(playerPed) || IS_ENTITY_DEAD(playerPed, false) || IS_PED_DEAD_OR_DYING(playerPed, true) || IS_PED_INJURED(playerPed) ||
-		IS_PED_RAGDOLL(playerPed) || IS_PED_GETTING_UP(playerPed) || IS_PED_FALLING(playerPed) || IS_PED_JUMPING(playerPed) || IS_PED_IN_MELEE_COMBAT(playerPed) || 
-		IS_PED_IN_COVER(playerPed, false) || IS_PED_SHOOTING(playerPed) || !IS_PED_ON_FOOT(playerPed) || IS_PED_TAKING_OFF_HELMET(playerPed) || IS_PED_USING_ANY_SCENARIO(playerPed))) //|| COUNT_PEDS_IN_COMBAT_WITH_TARGET(playerPed) > 0
+	if (sequenceState != FINISHED && !AdditionalChecks(playerPed))
 	{
 		StopAllAnims();
 		sequenceState = FLUSH_ASSETS;
+		forcedSequenceState = -2;
 		return;
 	}
+
+	if (forcedSequenceState == sequenceState || sequenceState == FINISHED)
+		forcedSequenceState = -2;
 
 	if (sequenceState != FINISHED)
 	{
 		PlaySmokingSequence();
+		UpdateControls();
+		if (forcedSequenceState > -2)
+			SetSequenceState(forcedSequenceState);
 
-		if (IS_DISABLED_CONTROL_JUST_PRESSED(PLAYER_CONTROL, smokingControl))
-			controlTimer.Set(0);
-		else if (IS_ENTITY_PLAYING_ANIM(playerPed, smokeBaseAnimDict, smokeBaseAnim, 3) &&
-			GET_ENTITY_ANIM_CURRENT_TIME(playerPed, smokeBaseAnimDict, smokeBaseAnim) == 1.0f)
-		{
-			PrintHelp("Press ~INPUT_JUMP~ to smoke, hold to stop.");
-			if (controlTimer.Get() < holdTime)
-			{
-				if (IS_DISABLED_CONTROL_JUST_RELEASED(PLAYER_CONTROL, smokingControl))
-				{
-					STOP_ANIM_TASK(playerPed, smokeBaseAnimDict, smokeBaseAnim, -2.0f);
-					sequenceState = LOOP;
-				}
-			}
-			else if (IS_DISABLED_CONTROL_PRESSED(PLAYER_CONTROL, smokingControl))
-			{
-				STOP_ANIM_TASK(playerPed, smokeBaseAnimDict, smokeBaseAnim, -2.0f);
-				sequenceState = EXITING;
-			}
-		}
-		else if (IS_ENTITY_PLAYING_ANIM(playerPed, smokeEnterAnimDict, smokeEnterAnim, 3) &&
-			GET_ENTITY_ANIM_CURRENT_TIME(playerPed, smokeEnterAnimDict, smokeEnterAnim) == 1.0f)
-		{
-			PrintHelp("Press ~INPUT_JUMP~ to smoke, hold to stop.");
-			if (controlTimer.Get() < holdTime)
-			{
-				if (IS_DISABLED_CONTROL_JUST_RELEASED(PLAYER_CONTROL, smokingControl))
-				{
-					STOP_ANIM_TASK(playerPed, smokeEnterAnimDict, smokeEnterAnim, -2.0f);
-					sequenceState = LOOP;
-				}
-			}
-			else if (IS_DISABLED_CONTROL_PRESSED(PLAYER_CONTROL, smokingControl))
-			{
-				STOP_ANIM_TASK(playerPed, smokeEnterAnimDict, smokeEnterAnim, -2.0f);
-				sequenceState = EXITING;
-			}
-		}
 		return;
 	}
 
 	DeleteObject(&item); //Force delete old item
-
-	if (AreStartControlsPressed() && AdditionalChecks(playerPed))
-		StartSequence();
 	return;
 }
 }	// END namespace SmokingSequence
 
-//namespace DrinkingSequence{}
 namespace DrinkingSequence {
 enum eSequenceState
 {
@@ -349,6 +372,7 @@ bool disabledControlsLastFrame = false;
 bool shouldPlayerStandStill = false;
 int sequenceState = FINISHED;
 int nextSequenceState = NULL;
+int forcedSequenceState = -2;
 char* lastAnimDict = NULL;
 char* lastAnim = NULL;
 Object item = NULL;
@@ -499,81 +523,116 @@ void PlayDrinkingSequence()
 
 void StartSequence()
 {
-	sequenceState = STREAM_ASSETS_IN;
-	PlayDrinkingSequence();
+	if (NoSequenceActive() && AdditionalChecks(playerPed))
+	{
+		sequenceState = STREAM_ASSETS_IN;
+		PlayDrinkingSequence();
+	}
 	return;
 }
 
-static constexpr int drinkingControl = INPUT_JUMP;
-bool AreStartControlsPressed()
+bool GetAnimHold(char** animDict, char** anim)
 {
-	if (// PAD: L3 + DPAD Left
-		(IS_DISABLED_CONTROL_JUST_PRESSED(FRONTEND_CONTROL, INPUT_FRONTEND_LS) && IS_DISABLED_CONTROL_PRESSED(FRONTEND_CONTROL, INPUT_FRONTEND_LEFT)) ||
-		(IS_DISABLED_CONTROL_PRESSED(FRONTEND_CONTROL, INPUT_FRONTEND_LS) && IS_DISABLED_CONTROL_JUST_PRESSED(FRONTEND_CONTROL, INPUT_FRONTEND_LEFT)) ||
-		//PC: I key
-		IsKeyJustUp(VK_I))
-		return true;
+	if (IS_ENTITY_PLAYING_ANIM(playerPed, drinkingAnimDict, drinkingExitAnim, 3) &&
+		GET_ENTITY_ANIM_CURRENT_TIME(playerPed, drinkingAnimDict, drinkingExitAnim) == 1.0f)
+	{
+		*animDict = drinkingAnimDict;
+		*anim = drinkingExitAnim;
+	}
+	else
+		return false;
 
-	return false;
+	return true;
+}
+
+void SetSequenceState(int state, bool shouldForceState)
+{
+	if (shouldForceState)
+		forcedSequenceState = state;
+
+	char* animDict = ""; char* anim = "";
+	if (!GetAnimHold(&animDict, &anim))
+		return;
+
+	STOP_ANIM_TASK(playerPed, animDict, anim, -2.0f);
+
+	if (state <= -1 && sequenceState != EXITING && sequenceState != FLUSH_ASSETS)
+		sequenceState = EXITING;
+	else
+		sequenceState = state;
+	return;
 }
 
 Timer controlTimer;
 constexpr int holdTime = 250;
+constexpr int drinkingControl = PLAYER_CONTROL;
+constexpr int drinkingInput = INPUT_JUMP;
+void UpdateControls()
+{
+	char* animDict = ""; char* anim = "";
+	if (!GetAnimHold(&animDict, &anim))
+		return;
+
+	AddScaleformInstructionalButton(drinkingControl, drinkingInput, "Drink (hold to stop)", true);
+	RunScaleformInstructionalButtons();
+
+	if (IS_DISABLED_CONTROL_JUST_PRESSED(drinkingControl, drinkingInput))
+	{
+		controlTimer.Set(0);
+		return;
+	}
+
+	if (controlTimer.Get() < holdTime)
+	{
+		if (IS_DISABLED_CONTROL_JUST_RELEASED(drinkingControl, drinkingInput))
+			SetSequenceState(ENTER_DRINK);
+	}
+	else if (IS_DISABLED_CONTROL_PRESSED(drinkingControl, drinkingInput))
+		SetSequenceState(EXITING);
+
+	return;
+}
+
 void UpdateSequence()
 {
-	if (sequenceState != FINISHED && (!DOES_ENTITY_EXIST(playerPed) || IS_ENTITY_DEAD(playerPed, false) || IS_PED_DEAD_OR_DYING(playerPed, true) || IS_PED_INJURED(playerPed) ||
-		IS_PED_RAGDOLL(playerPed) || IS_PED_GETTING_UP(playerPed) || IS_PED_FALLING(playerPed) || IS_PED_JUMPING(playerPed) || IS_PED_IN_MELEE_COMBAT(playerPed) ||
-		IS_PED_IN_COVER(playerPed, false) || IS_PED_SHOOTING(playerPed) || !IS_PED_ON_FOOT(playerPed) || IS_PED_TAKING_OFF_HELMET(playerPed) || IS_PED_USING_ANY_SCENARIO(playerPed))) //|| COUNT_PEDS_IN_COMBAT_WITH_TARGET(playerPed) > 0
+	if (sequenceState != FINISHED && !AdditionalChecks(playerPed))
 	{
 		StopAllAnims();
 		sequenceState = FLUSH_ASSETS;
+		forcedSequenceState = -2;
 		return;
 	}
+
+	if (forcedSequenceState == sequenceState || sequenceState == FINISHED)
+		forcedSequenceState = -2;
 
 	if (sequenceState != FINISHED)
 	{
 		PlayDrinkingSequence();
+		UpdateControls();
+		if (forcedSequenceState > -2)
+			SetSequenceState(forcedSequenceState);
 
-		if (IS_DISABLED_CONTROL_JUST_PRESSED(PLAYER_CONTROL, drinkingControl))
-			controlTimer.Set(0);
-		else if (IS_ENTITY_PLAYING_ANIM(playerPed, drinkingAnimDict, drinkingExitAnim, 3) &&
-			GET_ENTITY_ANIM_CURRENT_TIME(playerPed, drinkingAnimDict, drinkingExitAnim) == 1.0f)
-		{
-			PrintHelp("Press ~INPUT_JUMP~ to drink, hold to stop.");
-			if (controlTimer.Get() < holdTime)
-			{
-				if (IS_DISABLED_CONTROL_JUST_RELEASED(PLAYER_CONTROL, drinkingControl))
-				{
-					STOP_ANIM_TASK(playerPed, drinkingAnimDict, drinkingExitAnim, -2.0f);
-					sequenceState = ENTER_DRINK;
-				}
-			}
-			else if (IS_DISABLED_CONTROL_PRESSED(PLAYER_CONTROL, drinkingControl))
-			{
-				STOP_ANIM_TASK(playerPed, drinkingAnimDict, drinkingExitAnim, -2.0f);
-				sequenceState = EXITING;
-			}
-		}
 		return;
 	}
 
 	DeleteObject(&item); //Force delete old item
-
-	if (AreStartControlsPressed() && AdditionalChecks(playerPed))
-		StartSequence();
 	return;
 }
 }	// END namespace DrinkingSequence
 
+static bool NoSequenceActive()
+{
+	if (SmokingSequence::IsSequenceActive() ||
+		DrinkingSequence::IsSequenceActive())
+		return false;
+
+	return true;
+}
+
 void UpdateSequences()
 {
-	if (SmokingSequence::IsSequenceActive())
-		SmokingSequence::UpdateSequence();
-	else if (DrinkingSequence::IsSequenceActive())
-		DrinkingSequence::UpdateSequence();
-	else
-	{
-		SmokingSequence::UpdateSequence();
-		DrinkingSequence::UpdateSequence();
-	}
+	SmokingSequence::UpdateSequence();
+	DrinkingSequence::UpdateSequence();
+	return;
 }

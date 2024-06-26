@@ -12,7 +12,7 @@ BOOL APIENTRY DllMain(HMODULE hInstance, DWORD reason, LPVOID lpReserved)
 		break;
 	case DLL_PROCESS_DETACH:
 		scriptUnregister(hInstance);
-		keyboardHandlerRegister(OnKeyboardMessage);
+		keyboardHandlerUnregister(OnKeyboardMessage);
 		break;
 	}		
 	return TRUE;

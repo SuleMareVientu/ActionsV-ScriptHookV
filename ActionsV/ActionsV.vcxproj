@@ -8,6 +8,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp" />
+    <ClCompile Include="source\menu.cpp" />
     <ClCompile Include="source\script.cpp" />
     <ClCompile Include="source\globals.h" />
     <ClCompile Include="source\utils\functions.cpp" />

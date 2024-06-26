@@ -13,6 +13,7 @@
     <ClCompile Include="source\utils\keyboard.cpp">
       <Filter>utils</Filter>
     </ClCompile>
+    <ClCompile Include="source\menu.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\script.h" />
@@ -29,6 +30,9 @@
   <ItemGroup>
     <Filter Include="utils">
       <UniqueIdentifier>{f25e103c-7f8c-4cdd-ae74-da437a425289}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="menu">
+      <UniqueIdentifier>{166c9dfd-e838-4179-a4e6-404a140c0717}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

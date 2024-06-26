@@ -15,6 +15,7 @@ static void update()
 {
 	player = PLAYER_ID();
 	playerPed = PLAYER_PED_ID();
+	UpdateMenu();
 
 	// Check if player ped exists and control is on (e.g. not in a cutscene)
 	if (!ENTITY::DOES_ENTITY_EXIST(playerPed) || !IS_PLAYER_CONTROL_ON(player))
