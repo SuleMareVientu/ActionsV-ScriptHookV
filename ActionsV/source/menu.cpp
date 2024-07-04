@@ -5,6 +5,7 @@
 #include <string>
 #include "utils\functions.h"
 #include "utils\actions.h"
+#include "utils\menuEntries.h"
 #include "globals.h"
 #include "script.h"
 
@@ -859,31 +860,11 @@ void SampleSub()
 
 	bool shouldSmoke = false, shouldNotSmoke = false;
 	AddLocal("Smoke", SmokingSequence::IsSequenceActive(), shouldSmoke, shouldNotSmoke, smokingStatus);
-
-	//Smoking
-	if (shouldSmoke)
-		SmokingSequence::StartSequence();
-	else if (shouldNotSmoke)
-	{
-		SmokingSequence::SetSequenceState(-1, true);
-		smokingStatus = 2;
-	}
-	else if (!SmokingSequence::IsSequenceActive())
-		smokingStatus = -1;
+	SmokeOption(shouldSmoke, shouldNotSmoke, smokingStatus);
 
 	bool shouldDrink = false, shouldNotDrink = false;
 	AddLocal("Drink", DrinkingSequence::IsSequenceActive(), shouldDrink, shouldNotDrink, drinkingStatus);
-
-	//Drinking
-	if (shouldDrink)
-		DrinkingSequence::StartSequence();
-	else if (shouldNotDrink)
-	{
-		DrinkingSequence::SetSequenceState(-1, true);
-		drinkingStatus = 2;
-	}
-	else if (!DrinkingSequence::IsSequenceActive())
-		drinkingStatus = -1;
+	DrinkOption(shouldDrink, shouldNotDrink, drinkingStatus);
 }
 
 void YourSub()

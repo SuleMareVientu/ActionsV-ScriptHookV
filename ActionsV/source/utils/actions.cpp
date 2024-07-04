@@ -8,7 +8,7 @@
 #include "..\globals.h"
 #include "..\script.h"
 
-static bool NoSequenceActive();
+bool NoSequenceIsActive();
 
 namespace SmokingSequence {
 enum eSequenceState
@@ -240,9 +240,11 @@ void PlaySmokingSequence()
 	return;
 }
 
+int GetForcedSequenceState() { return forcedSequenceState; }
+
 void StartSequence()
 {
-	if (NoSequenceActive() && AdditionalChecks(playerPed))
+	if (NoSequenceIsActive() && AdditionalChecks(playerPed))
 	{
 		sequenceState = STREAM_ASSETS_IN;
 		PlaySmokingSequence();
@@ -521,9 +523,11 @@ void PlayDrinkingSequence()
 	return;
 }
 
+int GetForcedSequenceState() { return forcedSequenceState; };
+
 void StartSequence()
 {
-	if (NoSequenceActive() && AdditionalChecks(playerPed))
+	if (NoSequenceIsActive() && AdditionalChecks(playerPed))
 	{
 		sequenceState = STREAM_ASSETS_IN;
 		PlayDrinkingSequence();
@@ -621,13 +625,24 @@ void UpdateSequence()
 }
 }	// END namespace DrinkingSequence
 
-static bool NoSequenceActive()
+bool NoSequenceIsActive()
 {
 	if (SmokingSequence::IsSequenceActive() ||
 		DrinkingSequence::IsSequenceActive())
 		return false;
 
 	return true;
+}
+
+void StopActiveSequence()
+{
+	if (SmokingSequence::IsSequenceActive())
+		SmokingSequence::SetSequenceState(-1, true);
+
+	if (DrinkingSequence::IsSequenceActive())
+		DrinkingSequence::SetSequenceState(-1, true);
+
+	return;
 }
 
 void UpdateSequences()
