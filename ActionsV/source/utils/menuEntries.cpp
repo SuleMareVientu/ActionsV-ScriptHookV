@@ -11,18 +11,15 @@
 void SmokeOption(bool shouldSmoke, bool shouldNotSmoke, int &smokingStatus)
 {
 	if (shouldSmoke)
+		smokingSequence.Start();
+	else if (shouldNotSmoke && smokingSequence.IsActive())
 	{
-		if (!NoSequenceIsActive())
-			StopActiveSequence();
-
-		SmokingSequence::StartSequence();
+		smokingSequence.Stop();
+		smokingStatus = 2;
 	}
-	else if (shouldNotSmoke)
-		SmokingSequence::SetSequenceState(-1, true);
-	else if (!SmokingSequence::IsSequenceActive())
+	else if (!smokingSequence.IsActive())
 		smokingStatus = -1;
-
-	if (SmokingSequence::GetForcedSequenceState() == -1)
+	else if (smokingSequence.ShouldStop())
 		smokingStatus = 2;
 
 	return;
@@ -32,18 +29,15 @@ void SmokeOption(bool shouldSmoke, bool shouldNotSmoke, int &smokingStatus)
 void DrinkOption(bool shouldDrink, bool shouldNotDrink, int &drinkingStatus)
 {
 	if (shouldDrink)
+		drinkingSequence.Start();
+	else if (shouldNotDrink && drinkingSequence.IsActive())
 	{
-		if (!NoSequenceIsActive())
-			StopActiveSequence();
-
-		DrinkingSequence::StartSequence();
+		drinkingSequence.Stop();
+		drinkingStatus = 2;
 	}
-	else if (shouldNotDrink)
-		DrinkingSequence::SetSequenceState(-1, true);
-	else if (!DrinkingSequence::IsSequenceActive())
+	else if (!drinkingSequence.IsActive())
 		drinkingStatus = -1;
-
-	if (DrinkingSequence::GetForcedSequenceState() == -1)
+	else if (drinkingSequence.ShouldStop())
 		drinkingStatus = 2;
 
 	return;

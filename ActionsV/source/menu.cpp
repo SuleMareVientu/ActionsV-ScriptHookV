@@ -26,7 +26,7 @@ enum SUBMENU {
 
 char str[69];
 bool padInputBool = true, bNULL = false;
-constexpr TEXT_STYLE defaultTextStyle = { FONT_STANDARD, 0.35f, 0.35f, RGBA{255, 255, 255, 255}, DROPSTYLE_NONE, 0.0f, 1.0f, TEXTTYPE_TS_STANDARDMEDIUMHUD };
+constexpr TextStyle defaultTextStyle = { FONT_STANDARD, 0.35f, 0.35f, RGBA{255, 255, 255, 255}, DROPSTYLE_NONE, 0.0f, 1.0f, TEXTTYPE_TS_STANDARDMEDIUMHUD };
 constexpr RGBA whiteRGB = { 255, 255, 255, 255 };
 constexpr RGBA titleBoxCol = { 60, 125, 230, 255 };	// 50, 105, 190, 255
 constexpr RGBA backgroundCol = { 20, 20, 20, 125 };
@@ -35,7 +35,7 @@ constexpr RGBA optionTextCol = { 255, 255, 255, 255 };
 constexpr RGBA optionCountCol = { 255, 255, 255, 255 };
 constexpr RGBA selectedTextCol = { 255, 255, 255, 255 };
 constexpr RGBA selectionHighlightedCol = { 255, 255, 255, 140 };
-constexpr TEXT_FONTS fontTitle = FONT_CURSIVE, fontOptions = FONT_STANDARD, fontSelection = FONT_STANDARD;
+constexpr TextFonts fontTitle = FONT_CURSIVE, fontOptions = FONT_STANDARD, fontSelection = FONT_STANDARD;
 constexpr float menuX = 0.125f, menuY = 0.05f, menuOptionYMult = 0.035f;
 float menuXOffset = 0.0f, menuYOffset = 0.0f, optionCoord = 0.0f, menuYStart = 0.0f;
 inline float GetMenuX() { return menuX + menuXOffset; }
@@ -117,7 +117,7 @@ void GetOffsetFromEntity(Hash entity, float X, float Y, float Z, float Out[])
 	VectorToFloat(GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, X, Y, Z), Out);
 }
 
-void SetTextStyle(TEXT_STYLE Style = defaultTextStyle, bool bDrawBeforeFade = false)
+void SetTextStyle(TextStyle Style = defaultTextStyle, bool bDrawBeforeFade = false)
 {
 	// choose font
 	SET_TEXT_FONT(Style.aFont);
@@ -233,15 +233,15 @@ namespace /* Menu */ {
 class Menu
 {
 public:
-	static unsigned __int16 currentSubmenu;
-	static unsigned __int16 previousSubmenu;
-	static unsigned __int16 currentOption;
-	static unsigned __int16 totalOptions;
-	static unsigned __int16 printingOption;
-	static unsigned __int16 breakCount;
-	static unsigned __int16 totalBreaks;
-	static unsigned __int8 breakScroll;
-	static __int16 currentSubArrayIndex;
+	static unsigned short currentSubmenu;
+	static unsigned short previousSubmenu;
+	static unsigned short currentOption;
+	static unsigned short totalOptions;
+	static unsigned short printingOption;
+	static unsigned short breakCount;
+	static unsigned short totalBreaks;
+	static unsigned char breakScroll;
+	static short currentSubArrayIndex;
 	static int currentSubArray[20];
 	static int currenTopArray[20];
 	static int SetSubDelayed;
@@ -421,7 +421,7 @@ public:
 		}
 
 		// Draw option count
-		TEXT_STYLE tmpStyle = defaultTextStyle; tmpStyle.aFont = FONT_STANDARD; tmpStyle.XScale = 0.0f; tmpStyle.YScale = 0.26f; tmpStyle.colour = optionCountCol;
+		TextStyle tmpStyle = defaultTextStyle; tmpStyle.aFont = FONT_STANDARD; tmpStyle.XScale = 0.0f; tmpStyle.YScale = 0.26f; tmpStyle.colour = optionCountCol;
 		SetTextStyle(tmpStyle);
 
 		BEGIN_TEXT_COMMAND_DISPLAY_TEXT("CM_ITEM_COUNT");
@@ -572,15 +572,15 @@ public:
 	}
 };
 
-unsigned __int16 Menu::currentSubmenu = SUBMENU::CLOSED;
-unsigned __int16 Menu::previousSubmenu = SUBMENU::CLOSED;
-unsigned __int16 Menu::currentOption = 0;
-unsigned __int16 Menu::totalOptions = 0;
-unsigned __int16 Menu::printingOption = 0;
-unsigned __int16 Menu::breakCount = 0;
-unsigned __int16 Menu::totalBreaks = 0;
-unsigned __int8 Menu::breakScroll = 0;
-__int16 Menu::currentSubArrayIndex = 0;
+unsigned short Menu::currentSubmenu = SUBMENU::CLOSED;
+unsigned short Menu::previousSubmenu = SUBMENU::CLOSED;
+unsigned short Menu::currentOption = 0;
+unsigned short Menu::totalOptions = 0;
+unsigned short Menu::printingOption = 0;
+unsigned short Menu::breakCount = 0;
+unsigned short Menu::totalBreaks = 0;
+unsigned char Menu::breakScroll = 0;
+short Menu::currentSubArrayIndex = 0;
 int Menu::currentSubArray[20] = {};
 int Menu::currenTopArray[20] = {};
 int Menu::SetSubDelayed = 0;
@@ -616,7 +616,7 @@ bool IsOptionLeftPressed()
 
 void AddTitle(char* text)
 {
-	TEXT_STYLE tmpStyle = defaultTextStyle; tmpStyle.aFont = fontTitle; tmpStyle.colour = titleTextCol;
+	TextStyle tmpStyle = defaultTextStyle; tmpStyle.aFont = fontTitle; tmpStyle.colour = titleTextCol;
 	SetTextStyle(tmpStyle);
 
 	if (Menu::bit_centre_title)
@@ -664,7 +664,7 @@ void AddOption(char* text, bool& option_code_bool = bNULL, void(&Func)() = nullF
 			optionCoord = (static_cast<float>(Menu::printingOption - (Menu::currentOption - 14)) * menuOptionYMult) + GetMenuY() + 0.027f;
 	}
 
-	TEXT_STYLE tmpStyle = defaultTextStyle;
+	TextStyle tmpStyle = defaultTextStyle;
 	if (Menu::printingOption == Menu::currentOption)
 	{
 		tmpStyle.aFont = fontSelection; tmpStyle.colour = selectedTextCol;
@@ -762,7 +762,7 @@ void AddLocal(char* text, bool condition, bool& option_code_ON, bool& option_cod
 		OptionStatus(optionStatus);
 }
 
-void AddNumber(char* text, float value, __int8 decimal_places, bool& A_PRESS = bNULL, bool& RIGHT_PRESS = bNULL, bool& LEFT_PRESS = bNULL)
+void AddNumber(char* text, float value, unsigned char decimal_places, bool& A_PRESS = bNULL, bool& RIGHT_PRESS = bNULL, bool& LEFT_PRESS = bNULL)
 {
 	bNULL = 0;
 	AddOption(text, bNULL);
@@ -859,11 +859,11 @@ void SampleSub()
 	AddTitle("Drink");
 
 	bool shouldSmoke = false, shouldNotSmoke = false;
-	AddLocal("Smoke", SmokingSequence::IsSequenceActive(), shouldSmoke, shouldNotSmoke, smokingStatus);
+	AddLocal("Smoke", smokingSequence.IsActive(), shouldSmoke, shouldNotSmoke, smokingStatus);
 	SmokeOption(shouldSmoke, shouldNotSmoke, smokingStatus);
 
 	bool shouldDrink = false, shouldNotDrink = false;
-	AddLocal("Drink", DrinkingSequence::IsSequenceActive(), shouldDrink, shouldNotDrink, drinkingStatus);
+	AddLocal("Drink", drinkingSequence.IsActive(), shouldDrink, shouldNotDrink, drinkingStatus);
 	DrinkOption(shouldDrink, shouldNotDrink, drinkingStatus);
 }
 

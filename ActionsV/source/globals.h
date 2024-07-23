@@ -17,7 +17,7 @@ constexpr float PEDMOVEBLENDRATIO_RUN = 2.0f;
 constexpr float PEDMOVEBLENDRATIO_SPRINT = 3.0f;
 
 //Enums
-enum eHUD_COMPONENT {
+enum HUDComponent {
 	HUD_WANTED_STARS = 1,
 	HUD_WEAPON_ICON,
 	HUD_CASH,
@@ -40,7 +40,7 @@ enum eHUD_COMPONENT {
 	HUD_WEAPON_WHEEL_STATS
 };
 
-enum TEXT_FONTS {
+enum TextFonts {
 	FONT_STANDARD = 0,
 	FONT_CURSIVE,
 	FONT_ROCKSTAR_TAG,
@@ -52,14 +52,14 @@ enum TEXT_FONTS {
 	FONT_STYLE_TAXI
 };
 
-enum DROPSTYLE {
+enum DropStyle {
 	DROPSTYLE_NONE = 0,
 	DROPSTYLE_ALL = 1,
 	DROPSTYLE_OUTLINEONLY = 2,
 	DROPSTYLE_DROPSHADOWONLY = 3
 };
 
-enum GFX_DRAW_ORDER {
+enum GFXDrawOrder {
 	GFX_ORDER_BEFORE_HUD_PRIORITY_LOW = 0,
 	GFX_ORDER_BEFORE_HUD,  // standard
 	GFX_ORDER_BEFORE_HUD_PRIORITY_HIGH,
@@ -73,7 +73,7 @@ enum GFX_DRAW_ORDER {
 	GFX_ORDER_AFTER_FADE_PRIORITY_HIGH
 };
 
-enum STANDARD_TEXTTYPE {
+enum StandardTextType {
 	TEXTTYPE_TS_TITLE = 0,
 	TEXTTYPE_TS_TITLESMALL,
 	//  TEXTTYPE_TS_STANDARDTINY,
@@ -115,33 +115,33 @@ enum STANDARD_TEXTTYPE {
 	TEXTTYPE_TS_MINIGAME_MENU_GAMERTAG
 };
 
-struct TEXT_STYLE {
-	TEXT_FONTS aFont;
+struct TextStyle {
+	TextFonts aFont;
 	float XScale, YScale;
 	RGBA colour;
-	DROPSTYLE drop;
+	DropStyle drop;
 	float WrapStartX, WrapEndX;
-	STANDARD_TEXTTYPE aTextType;
+	StandardTextType aTextType;
 };
 
-struct TEXT_PLACEMENT {
+struct TextPlacement {
 	float x;
 	float y;
 };
 
-struct SCALEFORM_BUTTON {
+struct ScaleformButton {
 	int	iButtonSlotControl = NULL;
 	int	iButtonSlotInput = NULL;
 	char* sText = "";
 };
 
-struct SCALEFORM_INSTRUCTIONAL_BUTTONS {
+struct ScaleformInstructionalButtons {
 	bool bInitialised = false;
-	SCALEFORM_BUTTON Buttons[12];
+	ScaleformButton Buttons[12];
 	int ButtonCount = 0;
 };
 
-enum eCombatAttribute {
+enum CombatAttribute {
 	CA_INVALID = -1,
 	CA_USE_COVER = 0,
 	CA_USE_VEHICLE = 1,
@@ -227,7 +227,7 @@ enum eCombatAttribute {
 	CA_BLOCK_FIRE_FOR_VEHICLE_PASSENGER_MOUNTED_GUNS = 90
 };
 
-enum ePedBoneTag {
+enum PedBoneTag {
 	BONETAG_NULL = -1,
 
 	BONETAG_ROOT = 0,
@@ -291,7 +291,7 @@ enum ePedBoneTag {
 	BONETAG_PH_R_HAND = 28422
 };
 
-enum ePedFlag {
+enum PedFlag {
 	//Ped Config Flags
 	PCF_DisableShockingEvents = 294,
 	PCF_DisableTalkTo = 329,
@@ -301,7 +301,7 @@ enum ePedFlag {
 	PRF_DisablePlayerVaulting = 47
 };
 
-enum eAnimationFlag
+enum AnimationFlag
 {
 	AF_DEFAULT = 0,
 	AF_LOOPING = 1,
@@ -341,7 +341,7 @@ constexpr int defaultAF = AF_NOT_INTERRUPTABLE | AF_TAG_SYNC_IN | AF_TAG_SYNC_OU
 constexpr int upperAF = AF_NOT_INTERRUPTABLE | AF_UPPERBODY | AF_TAG_SYNC_IN | AF_TAG_SYNC_OUT | AF_HIDE_WEAPON | AF_ABORT_ON_WEAPON_DAMAGE | AF_EXIT_AFTER_INTERRUPTED;
 constexpr int upperSecondaryAF = AF_NOT_INTERRUPTABLE | AF_UPPERBODY | AF_SECONDARY | AF_HIDE_WEAPON | AF_ABORT_ON_WEAPON_DAMAGE | AF_EXIT_AFTER_INTERRUPTED;
 
-enum eScriptLookFlag
+enum ScriptLookFlag
 {
 	SLF_DEFAULT = 0,
 	SLF_SLOW_TURN_RATE = 1,
@@ -363,13 +363,13 @@ enum eScriptLookFlag
 	SLF_USE_REF_DIR_ABSOLUTE = 65536
 };
 
-enum CONTROL_TYPE {
+enum ControlType {
 	PLAYER_CONTROL = 0,
 	CAMERA_CONTROL,
 	FRONTEND_CONTROL
 };
 
-enum eControlAction {
+enum ControlAction {
 	INPUT_NEXT_CAMERA = 0,
 	INPUT_LOOK_LR,
 	INPUT_LOOK_UD,

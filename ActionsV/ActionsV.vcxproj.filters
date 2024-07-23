@@ -41,4 +41,7 @@
       <UniqueIdentifier>{166c9dfd-e838-4179-a4e6-404a140c0717}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="inc\FiveM.rc" />
+  </ItemGroup>
 </Project>

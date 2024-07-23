@@ -247,18 +247,18 @@ void PlayAmbientSpeech(Ped ped, char* speechName)
 	return;
 }
 
-static SCALEFORM_INSTRUCTIONAL_BUTTONS DisplayStruct;
+static ScaleformInstructionalButtons DisplayStruct;
 static int InstructionalButtonsScaleformIndex = NULL;
 void RunScaleformInstructionalButtons(bool refresh)
 {
 	if (!HAS_SCALEFORM_MOVIE_LOADED(InstructionalButtonsScaleformIndex))
 	{
 		InstructionalButtonsScaleformIndex = REQUEST_SCALEFORM_MOVIE("instructional_buttons");
-		SCALEFORM_INSTRUCTIONAL_BUTTONS tmp; DisplayStruct = tmp;	//Reset struct state
+		ScaleformInstructionalButtons tmp; DisplayStruct = tmp;	//Reset struct state
 		return;
 	}
 
-	if (refresh = true || HAVE_CONTROLS_CHANGED(FRONTEND_CONTROL))
+	if (refresh == true || HAVE_CONTROLS_CHANGED(FRONTEND_CONTROL))
 		DisplayStruct.bInitialised = false;
 
 	if (!DisplayStruct.bInitialised)
@@ -305,9 +305,7 @@ void RunScaleformInstructionalButtons(bool refresh)
 void AddScaleformInstructionalButton(int iButtonSlotControl, int iButtonSlotInput, char* sText, bool reset)
 {
 	if (reset)
-	{
-		SCALEFORM_INSTRUCTIONAL_BUTTONS tmp; DisplayStruct = tmp;	//Reset struct state
-	}
+	{ ScaleformInstructionalButtons tmp; DisplayStruct = tmp; }	//Reset struct state
 
 	if (DisplayStruct.ButtonCount >= 12)
 		return;
