@@ -8,8 +8,6 @@
 #define SEQUENCE_WAITING_FOR_ANIMATION_TO_END 3
 #define SEQUENCE_FLUSH_ASSETS 4
 
-#define SEQUENCE_HALT_TIMER 10000
-
 /*	All sequence enums must follow this structure
 enum eSequenceState
 {
@@ -43,14 +41,21 @@ protected:
 	int nextSequenceState = NULL;
 	bool isSequenceActive = false;
 	bool shouldStopSequence = false;
-	char *lastAnimDict = NULL;
-	char *lastAnim = NULL;
+	char* lastAnimDict = NULL;
+	char* lastAnim = NULL;
 	bool disabledControlsLastFrame = false;
 	bool shouldPlayerStandStill = false;
-	const unsigned short holdTime = (unsigned short)250;
+	Timer stopTimer;
+	int maxStopTimer = 10000;
+	ControlType control = PLAYER_CONTROL;
+	ControlAction input = INPUT_JUMP;
+	Timer controlTimer;
+	short holdTime = 250;
 
 	void PlayAnim(char *animDict, char *anim, int flag, int duration = -1);
 	void PlayAnimAndWait(char *animDict, char *anim, int flag, int nextState, float startPhase = 0.0f, float blendInSpeed = 1.5f, float blendOutSpeed = -1.5f, bool standStill = false, int duration = -1);
+	void SetPlayerControls();
+	void SetPedMovementAndReactions() const;
 };
 
 constexpr int cigaretteHash = 0x783A4BE3;		//Prop_AMB_Ciggy_01
@@ -79,6 +84,10 @@ class cSmokingSequence : public cSequence
 public:
 	void Update();
 
+	cSmokingSequence() {
+		maxStopTimer = 20000;
+	}
+
 private:
 	enum SequenceState
 	{
@@ -92,15 +101,6 @@ private:
 	};
 
 	Object item = NULL;
-	Timer stopTimer;
-	Timer controlTimer;
-	const unsigned short maxStopTimer = (unsigned short)25000;
-	const ControlType control = PLAYER_CONTROL;
-	const ControlAction input = INPUT_JUMP;
-
-	void SetPlayerControls();
-
-	void SetPedMovementAndReactions();
 
 	void StopAllAnims();
 
@@ -123,7 +123,7 @@ private:
 	void ForceStop();
 };
 
-constexpr int beerHash = 683570518;		//Prop_AMB_Beer_Bottle
+constexpr int beerHash = 0x28BE7556;		//Prop_AMB_Beer_Bottle
 constexpr char* drinkingAnimDict = "mp_player_intdrink";
 constexpr char* drinkingEnterAnim = "intro_bottle";
 constexpr char* drinkingBaseAnim = "loop_bottle";
@@ -132,6 +132,10 @@ class cDrinkingSequence : public cSequence
 {
 public:
 	void Update();
+
+	cDrinkingSequence() {
+		maxStopTimer = 5000;
+	}
 
 private:
 	enum SequenceState
@@ -148,15 +152,6 @@ private:
 	};
 
 	Object item = NULL;
-	Timer stopTimer;
-	const unsigned short maxStopTimer = (unsigned short)SEQUENCE_HALT_TIMER;
-	Timer controlTimer;
-	const ControlType control = PLAYER_CONTROL;
-	const ControlAction input = INPUT_JUMP;
-
-	void SetPlayerControls();
-
-	void SetPedMovementAndReactions();
 
 	void StopAllAnims();
 

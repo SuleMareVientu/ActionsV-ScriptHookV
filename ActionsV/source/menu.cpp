@@ -755,7 +755,6 @@ void AddLocal(char* text, bool condition, bool& option_code_ON, bool& option_cod
 			option_code_OFF = true;
 	}
 
-
 	if (optionStatus <= -1)
 		OptionStatus(condition); // Display ON/OFF
 	else
@@ -814,7 +813,7 @@ namespace Submenus {
 void MainMenu()
 {
 	AddTitle(menuTitle);
-	AddOption("Drink", bNULL, nullFunc, SUBMENU::DRINK);
+	AddOption("Actions", bNULL, nullFunc, SUBMENU::DRINK);
 	AddOption("Large Submenu", bNULL, nullFunc, SUBMENU::MISC);
 	AddOption("Settings", bNULL, nullFunc, SUBMENU::SETTINGS);
 }
@@ -856,7 +855,7 @@ int smokingStatus = -1;
 int drinkingStatus = -1;
 void SampleSub()
 {
-	AddTitle("Drink");
+	AddTitle("Actions");
 
 	bool shouldSmoke = false, shouldNotSmoke = false;
 	AddLocal("Smoke", smokingSequence.IsActive(), shouldSmoke, shouldNotSmoke, smokingStatus);

@@ -13,7 +13,7 @@ void Timer::Set(int value)
 	return;
 }
 
-int Timer::Get()
+int Timer::Get() const
 {
 	return (GET_GAME_TIMER() - gameTimer);
 }
@@ -138,6 +138,7 @@ bool AdditionalChecks(Ped ped, bool countEnemies)
 		IS_PED_SHOOTING(ped) ||
 		!IS_PED_ON_FOOT(ped) ||
 		IS_PED_TAKING_OFF_HELMET(ped) ||
+		GET_ENTITY_SUBMERGED_LEVEL(ped) >= 0.7f ||
 		(countEnemies && (IS_PED_IN_MELEE_COMBAT(ped) || COUNT_PEDS_IN_COMBAT_WITH_TARGET(ped) > 0)))
 		return false;
 

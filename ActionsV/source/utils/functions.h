@@ -4,7 +4,7 @@ class Timer {
 	int gameTimer = 0;
 public:
 	void Set(int value);
-	int Get();
+	int Get() const;
 };
 
 void EnablePedConfigFlag(Ped ped, int flag);

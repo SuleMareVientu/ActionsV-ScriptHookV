@@ -69,9 +69,7 @@ void cSequence::PlayAnimAndWait(char *animDict, char *anim, int flag, int nextSt
 	return;
 }
 
-//////////////////////////////////SMOKING//////////////////////////////////
-
-void cSmokingSequence::SetPlayerControls()
+void cSequence::SetPlayerControls()
 {
 	//Hide Phone and mobile browser
 	if (!disabledControlsLastFrame)
@@ -83,10 +81,10 @@ void cSmokingSequence::SetPlayerControls()
 	else
 		disabledControlsLastFrame = false;
 
-	if (sequenceState != STREAM_ASSETS_IN && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
+	if (sequenceState != SEQUENCE_STREAM_ASSETS_IN && sequenceState != SEQUENCE_FLUSH_ASSETS && sequenceState != SEQUENCE_FINISHED)
 		DisablePlayerActionsThisFrame();
 
-	if (sequenceState == WAITING_FOR_ANIMATION_TO_END)
+	if (sequenceState == SEQUENCE_WAITING_FOR_ANIMATION_TO_END)
 	{
 		if (shouldPlayerStandStill)
 			DisablePlayerControlThisFrame();
@@ -97,9 +95,9 @@ void cSmokingSequence::SetPlayerControls()
 	return;
 }
 
-void cSmokingSequence::SetPedMovementAndReactions()
+void cSequence::SetPedMovementAndReactions() const
 {
-	if (sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+	if (sequenceState == SEQUENCE_FLUSH_ASSETS || sequenceState == SEQUENCE_FINISHED)
 	{
 		SET_PED_CAN_PLAY_GESTURE_ANIMS(playerPed, true);
 		SET_PED_STEALTH_MOVEMENT(playerPed, true, NULL);
@@ -113,6 +111,8 @@ void cSmokingSequence::SetPedMovementAndReactions()
 	}
 	return;
 }
+
+//////////////////////////////////SMOKING//////////////////////////////////
 
 void cSmokingSequence::StopAllAnims()
 {
@@ -304,23 +304,28 @@ void cSmokingSequence::UpdateControls()
 
 void cSmokingSequence::ForceStop()
 {
+	if (sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+		return;
+
 	StopAllAnims();
 	StopAllPTFX();
-	sequenceState = FLUSH_ASSETS;
+	DeleteObject(&item);
 	shouldStopSequence = false;
+	sequenceState = FLUSH_ASSETS;
+	PlaySequence();
 	return;
 }
 
 void cSmokingSequence::Update()
 {
-	if (sequenceState != FINISHED && !AdditionalChecks(playerPed))
-	{
-		ForceStop();
-		return;
-	}
-
 	if (sequenceState != FINISHED)
 	{
+		if (!AdditionalChecks(playerPed))
+		{
+			ForceStop();
+			return;
+		}
+
 		PlaySequence();
 		UpdateControls();
 		if (shouldStopSequence)
@@ -342,49 +347,6 @@ void cSmokingSequence::Update()
 }
 
 //////////////////////////////////DRINKING//////////////////////////////////
-
-void cDrinkingSequence::SetPlayerControls()
-{
-	//Hide Phone and mobile browser
-	if (!disabledControlsLastFrame)
-	{
-		SET_CONTROL_VALUE_NEXT_FRAME(FRONTEND_CONTROL, INPUT_CELLPHONE_CANCEL, 1.0f);
-		SET_CONTROL_VALUE_NEXT_FRAME(FRONTEND_CONTROL, INPUT_CURSOR_CANCEL, 1.0f);
-		disabledControlsLastFrame = true;
-	}
-	else
-		disabledControlsLastFrame = false;
-
-	if (sequenceState != STREAM_ASSETS_IN && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
-		DisablePlayerActionsThisFrame();
-
-	if (sequenceState == WAITING_FOR_ANIMATION_TO_END)
-	{
-		if (shouldPlayerStandStill)
-			DisablePlayerControlThisFrame();
-	}
-	else
-		shouldPlayerStandStill = false;
-
-	return;
-}
-
-void cDrinkingSequence::SetPedMovementAndReactions()
-{
-	if (sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
-	{
-		SET_PED_CAN_PLAY_GESTURE_ANIMS(playerPed, true);
-		SET_PED_STEALTH_MOVEMENT(playerPed, true, NULL);
-		SET_PED_USING_ACTION_MODE(playerPed, true, 0, NULL);
-	}
-	else
-	{
-		SET_PED_CAN_PLAY_GESTURE_ANIMS(playerPed, false);
-		SET_PED_STEALTH_MOVEMENT(playerPed, false, NULL);
-		SET_PED_USING_ACTION_MODE(playerPed, false, -1, NULL);
-	}
-	return;
-}
 
 void cDrinkingSequence::StopAllAnims()
 {
@@ -521,23 +483,27 @@ void cDrinkingSequence::UpdateControls()
 
 void cDrinkingSequence::ForceStop()
 {
+	if (sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+		return;
+
 	StopAllAnims();
-	sequenceState = FLUSH_ASSETS;
+	DeleteObject(&item);
 	shouldStopSequence = false;
+	sequenceState = FLUSH_ASSETS;
+	PlaySequence();
 	return;
 }
 
 void cDrinkingSequence::Update()
 {
-	if (sequenceState != FINISHED && !AdditionalChecks(playerPed))
-	{
-		StopAllAnims();
-		sequenceState = FLUSH_ASSETS;
-		return;
-	}
-
 	if (sequenceState != FINISHED)
 	{
+		if (!AdditionalChecks(playerPed))
+		{
+			ForceStop();
+			return;
+		}
+
 		PlaySequence();
 		UpdateControls();
 		if (shouldStopSequence)
@@ -549,7 +515,10 @@ void cDrinkingSequence::Update()
 		}
 		else
 			stopTimer.Set(0);
+
+		return;
 	}
 
+	shouldStopSequence = false; //Reset var
 	return;
 }
