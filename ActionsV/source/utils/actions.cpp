@@ -113,6 +113,27 @@ void cSequence::SetPedMovementAndReactions() const
 }
 
 //////////////////////////////////SMOKING//////////////////////////////////
+static constexpr int cigaretteHash = 0x783A4BE3;		//Prop_AMB_Ciggy_01
+static constexpr char* smokeBaseAnimDict = "amb@world_human_smoking@male@male_a@base";
+static constexpr char* smokeBaseAnim = "base";
+
+static constexpr char* smokeEnterAnimDict = "amb@world_human_smoking@male@male_a@enter";
+static constexpr char* smokeEnterAnim = "enter";
+
+static constexpr char* smokeExitAnimDict = "amb@world_human_smoking@male@male_a@exit";
+static constexpr char* smokeExitAnim = "exit";
+
+static constexpr char* smokeIdleAnimDict = "amb@world_human_smoking@male@male_a@idle_a";
+static constexpr char* smokeIdleAAnim = "idle_a";
+static constexpr char* smokeIdleBAnim = "idle_b";
+static constexpr char* smokeIdleCAnim = "idle_c";
+
+static constexpr char* ANM_CIG_SMOKE = "ent_anim_cig_smoke";
+static constexpr char* ANM_CIG_EXHALE_MTH = "ent_anim_cig_exhale_mth";
+static constexpr char* ANM_CIG_EXHALE_NSE = "ent_anim_cig_exhale_nse";
+static constexpr char* ANM_CIG_SMOKE_CAR = "ent_anim_cig_smoke_car";
+static constexpr char* ANM_CIG_EXHALE_MTH_CAR = "ent_anim_cig_exhale_mth_car";
+static constexpr char* ANM_CIG_EXHALE_NSE_CAR = "ent_anim_cig_exhale_nse_car";
 
 void cSmokingSequence::StopAllAnims()
 {
@@ -347,6 +368,11 @@ void cSmokingSequence::Update()
 }
 
 //////////////////////////////////DRINKING//////////////////////////////////
+static constexpr int beerHash = 0x28BE7556;		//Prop_AMB_Beer_Bottle
+static constexpr char* drinkingAnimDict = "mp_player_intdrink";
+static constexpr char* drinkingEnterAnim = "intro_bottle";
+static constexpr char* drinkingBaseAnim = "loop_bottle";
+static constexpr char* drinkingExitAnim = "outro_bottle";
 
 void cDrinkingSequence::StopAllAnims()
 {

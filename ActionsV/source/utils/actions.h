@@ -58,27 +58,6 @@ protected:
 	void SetPedMovementAndReactions() const;
 };
 
-constexpr int cigaretteHash = 0x783A4BE3;		//Prop_AMB_Ciggy_01
-constexpr char* smokeBaseAnimDict = "amb@world_human_smoking@male@male_a@base";
-constexpr char* smokeBaseAnim = "base";
-
-constexpr char* smokeEnterAnimDict = "amb@world_human_smoking@male@male_a@enter";
-constexpr char* smokeEnterAnim = "enter";
-
-constexpr char* smokeExitAnimDict = "amb@world_human_smoking@male@male_a@exit";
-constexpr char* smokeExitAnim = "exit";
-
-constexpr char* smokeIdleAnimDict = "amb@world_human_smoking@male@male_a@idle_a";
-constexpr char* smokeIdleAAnim = "idle_a";
-constexpr char* smokeIdleBAnim = "idle_b";
-constexpr char* smokeIdleCAnim = "idle_c";
-
-constexpr char* ANM_CIG_SMOKE = "ent_anim_cig_smoke";
-constexpr char* ANM_CIG_EXHALE_MTH = "ent_anim_cig_exhale_mth";
-constexpr char* ANM_CIG_EXHALE_NSE = "ent_anim_cig_exhale_nse";
-constexpr char* ANM_CIG_SMOKE_CAR = "ent_anim_cig_smoke_car";
-constexpr char* ANM_CIG_EXHALE_MTH_CAR = "ent_anim_cig_exhale_mth_car";
-constexpr char* ANM_CIG_EXHALE_NSE_CAR = "ent_anim_cig_exhale_nse_car";
 class cSmokingSequence : public cSequence
 {
 public:
@@ -121,11 +100,6 @@ private:
 	void ForceStop();
 };
 
-constexpr int beerHash = 0x28BE7556;		//Prop_AMB_Beer_Bottle
-constexpr char* drinkingAnimDict = "mp_player_intdrink";
-constexpr char* drinkingEnterAnim = "intro_bottle";
-constexpr char* drinkingBaseAnim = "loop_bottle";
-constexpr char* drinkingExitAnim = "outro_bottle";
 class cDrinkingSequence : public cSequence
 {
 public:
