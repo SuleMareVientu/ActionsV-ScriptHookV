@@ -84,9 +84,7 @@ class cSmokingSequence : public cSequence
 public:
 	void Update();
 
-	cSmokingSequence() {
-		maxStopTimer = 20000;
-	}
+	cSmokingSequence() { maxStopTimer = 20000; }
 
 private:
 	enum SequenceState
@@ -133,9 +131,7 @@ class cDrinkingSequence : public cSequence
 public:
 	void Update();
 
-	cDrinkingSequence() {
-		maxStopTimer = 5000;
-	}
+	cDrinkingSequence() { maxStopTimer = 5000; }
 
 private:
 	enum SequenceState
