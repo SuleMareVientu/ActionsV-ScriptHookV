@@ -91,6 +91,16 @@ bool RequestAnimDict(char* animDict)
 	return true;
 }
 
+bool RequestAnimSet(char* animSet)
+{
+	if (!HAS_ANIM_SET_LOADED(animSet))
+	{
+		REQUEST_ANIM_SET(animSet);
+		return false;
+	}
+	return true;
+}
+
 bool RequestModel(Hash model)
 {
 	if (!IS_MODEL_VALID(model))
@@ -101,6 +111,14 @@ bool RequestModel(Hash model)
 		REQUEST_MODEL(model);
 		return false;
 	}
+	return true;
+}
+
+bool RequestAudioBank(char* bank)
+{
+	if (!REQUEST_SCRIPT_AUDIO_BANK(bank, false, -1))
+		return false;
+
 	return true;
 }
 
@@ -119,6 +137,18 @@ void DeleteObject(Object* obj)
 	{
 		SET_ENTITY_AS_MISSION_ENTITY(*obj, true, true);
 		DELETE_OBJECT(obj);
+	}
+	return;
+}
+
+void StopPTFX(int* PTFXHandle)
+{
+	if (*PTFXHandle != NULL)
+	{
+		if (DOES_PARTICLE_FX_LOOPED_EXIST(*PTFXHandle))
+			STOP_PARTICLE_FX_LOOPED(*PTFXHandle, false);
+
+		*PTFXHandle = NULL;
 	}
 	return;
 }

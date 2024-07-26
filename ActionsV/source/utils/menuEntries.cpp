@@ -42,3 +42,21 @@ void DrinkOption(bool shouldDrink, bool shouldNotDrink, int &drinkingStatus)
 
 	return;
 }
+
+//Leaf Blower
+void LeafBlowerOption(bool shouldLeafBlower, bool shouldNotLeafBlower, int &leafBlowerStatus)
+{
+	if (shouldLeafBlower)
+		leafBlowerSequence.Start();
+	else if (shouldNotLeafBlower && leafBlowerSequence.IsActive())
+	{
+		leafBlowerSequence.Stop();
+		leafBlowerStatus = 2;
+	}
+	else if (!leafBlowerSequence.IsActive())
+		leafBlowerStatus = -1;
+	else if (leafBlowerSequence.ShouldStop())
+		leafBlowerStatus = 2;
+
+	return;
+}

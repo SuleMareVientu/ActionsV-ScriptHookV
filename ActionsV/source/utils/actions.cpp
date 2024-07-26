@@ -10,18 +10,23 @@
 
 cSmokingSequence smokingSequence;
 cDrinkingSequence drinkingSequence;
+cLeafBlowerSequence leafBlowerSequence;
+
+static constexpr char* CORE_PTFX_ASSET = "core";
 
 void UpdateSequences()
 {
 	smokingSequence.Update();
 	drinkingSequence.Update();
+	leafBlowerSequence.Update();
 	return;
 }
 
 static bool NoSequenceIsActive()
 {
 	if (smokingSequence.IsActive() ||
-		drinkingSequence.IsActive())
+		drinkingSequence.IsActive() ||
+		leafBlowerSequence.IsActive())
 		return false;
 
 	return true;
@@ -35,6 +40,8 @@ static void StopActiveSequence()
 	if (drinkingSequence.IsActive())
 		drinkingSequence.Stop();
 
+	if (leafBlowerSequence.IsActive())
+		leafBlowerSequence.Stop();
 	return;
 }
 
@@ -100,12 +107,18 @@ void cSequence::SetPedMovementAndReactions() const
 	if (sequenceState == SEQUENCE_FLUSH_ASSETS || sequenceState == SEQUENCE_FINISHED)
 	{
 		SET_PED_CAN_PLAY_GESTURE_ANIMS(playerPed, true);
+		SET_PED_CAN_PLAY_AMBIENT_ANIMS(playerPed, true);
+		SET_PED_CAN_PLAY_AMBIENT_BASE_ANIMS(playerPed, true);
+		SET_PED_CAN_PLAY_AMBIENT_IDLES(playerPed, false, false);
 		SET_PED_STEALTH_MOVEMENT(playerPed, true, NULL);
 		SET_PED_USING_ACTION_MODE(playerPed, true, 0, NULL);
 	}
 	else
 	{
 		SET_PED_CAN_PLAY_GESTURE_ANIMS(playerPed, false);
+		SET_PED_CAN_PLAY_AMBIENT_ANIMS(playerPed, false);
+		SET_PED_CAN_PLAY_AMBIENT_BASE_ANIMS(playerPed, false);
+		SET_PED_CAN_PLAY_AMBIENT_IDLES(playerPed, true, true);
 		SET_PED_STEALTH_MOVEMENT(playerPed, false, NULL);
 		SET_PED_USING_ACTION_MODE(playerPed, false, -1, NULL);
 	}
@@ -152,23 +165,11 @@ void cSmokingSequence::StopAllAnims()
 	return;
 }
 
-void cSmokingSequence::StopPTFX(int* PTFXHandle)
-{
-	if (*PTFXHandle != NULL)
-	{
-		if (DOES_PARTICLE_FX_LOOPED_EXIST(*PTFXHandle))
-			STOP_PARTICLE_FX_LOOPED(*PTFXHandle, false);
-
-		*PTFXHandle = NULL;
-	}
-	return;
-}
-
 void cSmokingSequence::StopAllPTFX()
 {
 	StopPTFX(&cigarettePTFXHandle);
 	StopPTFX(&hasExhaledNose);
-	REMOVE_NAMED_PTFX_ASSET("core");
+	REMOVE_NAMED_PTFX_ASSET(CORE_PTFX_ASSET);
 	return;
 }
 
@@ -180,14 +181,14 @@ void cSmokingSequence::PlayPTFX()
 		return;
 	}
 
-	if (!HAS_NAMED_PTFX_ASSET_LOADED("core"))
-		REQUEST_NAMED_PTFX_ASSET("core");
+	if (!HAS_NAMED_PTFX_ASSET_LOADED(CORE_PTFX_ASSET))
+		REQUEST_NAMED_PTFX_ASSET(CORE_PTFX_ASSET);
 
 	// offsets can be found inside scenarios
 	const float enterAnimTime = GET_ENTITY_ANIM_CURRENT_TIME(playerPed, smokeEnterAnimDict, smokeEnterAnim);
 	if (enterAnimTime >= 0.4826087f && cigarettePTFXHandle == NULL)
 	{
-		USE_PARTICLE_FX_ASSET("core");
+		USE_PARTICLE_FX_ASSET(CORE_PTFX_ASSET);
 		cigarettePTFXHandle = START_PARTICLE_FX_LOOPED_ON_PED_BONE(ANM_CIG_SMOKE, playerPed, -0.08f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, BONETAG_PH_R_HAND, 1.0f, false, false, false);
 	}
 
@@ -197,7 +198,7 @@ void cSmokingSequence::PlayPTFX()
 
 	if (baseAnimTime >= 0.7965517f && hasExhaledNose == NULL)
 	{
-		USE_PARTICLE_FX_ASSET("core");
+		USE_PARTICLE_FX_ASSET(CORE_PTFX_ASSET);
 		hasExhaledNose = START_PARTICLE_FX_NON_LOOPED_ON_PED_BONE(ANM_CIG_EXHALE_NSE, playerPed, 0.02f, 0.16f, 0.0f, 0.0f, 0.0f, 0.0f, BONETAG_HEAD, 1.0f, false, false, false);
 	}
 	return;
@@ -237,6 +238,7 @@ void cSmokingSequence::PlaySequence()
 		REMOVE_ANIM_DICT(smokeBaseAnimDict);
 		REMOVE_ANIM_DICT(smokeExitAnimDict);
 		SET_MODEL_AS_NO_LONGER_NEEDED(cigaretteHash);
+		shouldStopSequence = false;
 		sequenceState = FINISHED;
 		break;
 	case STREAM_ASSETS_IN:
@@ -289,9 +291,9 @@ void cSmokingSequence::SetState(int state)
 
 	STOP_ANIM_TASK(playerPed, animDict, anim, -2.0f);
 
-	if (state == EXITING && sequenceState != EXITING && sequenceState != FLUSH_ASSETS)
+	if (state == EXITING && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
 		sequenceState = EXITING;
-	else
+	else if (state != EXITING)
 		sequenceState = state;
 
 	return;
@@ -299,6 +301,9 @@ void cSmokingSequence::SetState(int state)
 
 void cSmokingSequence::UpdateControls() 
 {
+	if (sequenceState == EXITING || sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+		return;
+
 	char* animDict = ""; char* anim = "";
 	if (!GetAnimHold(&animDict, &anim))
 		return;
@@ -318,7 +323,7 @@ void cSmokingSequence::UpdateControls()
 			SetState(LOOP);
 	}
 	else if (IS_DISABLED_CONTROL_PRESSED(control, input))
-		SetState(EXITING);
+		shouldStopSequence = true;
 
 	return;
 }
@@ -348,17 +353,20 @@ void cSmokingSequence::Update()
 		}
 
 		PlaySequence();
-		UpdateControls();
 		if (shouldStopSequence)
 		{
 			if (stopTimer.Get() > maxStopTimer)
+			{
 				ForceStop();
+				return;
+			}
 
 			SetState(EXITING);
 		}
 		else
 			stopTimer.Set(0);
 
+		UpdateControls();
 		return;
 	}
 
@@ -431,6 +439,7 @@ void cDrinkingSequence::PlaySequence()
 		DETACH_ENTITY(item, false, false);
 		SET_ENTITY_AS_NO_LONGER_NEEDED(&item);
 		SET_MODEL_AS_NO_LONGER_NEEDED(beerHash);
+		shouldStopSequence = false;
 		sequenceState = FINISHED;
 		break;
 	case STREAM_ASSETS_IN:
@@ -473,9 +482,9 @@ void cDrinkingSequence::SetState(int state)
 
 	STOP_ANIM_TASK(playerPed, animDict, anim, -2.0f);
 
-	if (state == EXITING && sequenceState != EXITING && sequenceState != FLUSH_ASSETS)
+	if (state == EXITING && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
 		sequenceState = EXITING;
-	else
+	else if (state != EXITING)
 		sequenceState = state;
 
 	return;
@@ -483,6 +492,9 @@ void cDrinkingSequence::SetState(int state)
 
 void cDrinkingSequence::UpdateControls()
 {
+	if (sequenceState == EXITING || sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+		return;
+
 	char* animDict = ""; char* anim = "";
 	if (!GetAnimHold(&animDict, &anim))
 		return;
@@ -502,7 +514,7 @@ void cDrinkingSequence::UpdateControls()
 			SetState(ENTER_DRINK);
 	}
 	else if (IS_DISABLED_CONTROL_PRESSED(control, input))
-		SetState(EXITING);
+		shouldStopSequence = true;
 
 	return;
 }
@@ -513,10 +525,10 @@ void cDrinkingSequence::ForceStop()
 		return;
 
 	StopAllAnims();
-	DeleteObject(&item);
 	shouldStopSequence = false;
 	sequenceState = FLUSH_ASSETS;
 	PlaySequence();
+	DeleteObject(&item);
 	return;
 }
 
@@ -531,17 +543,201 @@ void cDrinkingSequence::Update()
 		}
 
 		PlaySequence();
-		UpdateControls();
 		if (shouldStopSequence)
 		{
 			if (stopTimer.Get() > maxStopTimer)
+			{
 				ForceStop();
+				return;
+			}
 
 			SetState(EXITING);
 		}
 		else
 			stopTimer.Set(0);
 
+		UpdateControls();
+		return;
+	}
+
+	shouldStopSequence = false; //Reset var
+	return;
+}
+
+//////////////////////////////////LEAF BLOWER//////////////////////////////////
+static constexpr int leafBlowerHash = 0x5F989485;		//Prop_Leaf_Blower_01
+static constexpr char* leafBlowerClipSet = "move_m@leaf_blower";
+static constexpr char* ANM_LEAF_BLOWER = "ent_anim_leaf_blower";
+static constexpr char* leafBlowerAudioBank = "SCRIPT/GARDEN_LEAF_BLOWER";
+static constexpr char* leafBlowerSound = "GARDENING_LEAFBLOWER_ANIM_TRIGGERED";
+
+void cLeafBlowerSequence::StopAllPTFXAndSounds()
+{
+	StopPTFX(&leafBlowerPTFXHandle);
+	REMOVE_NAMED_PTFX_ASSET(CORE_PTFX_ASSET);
+	STOP_SOUND(soundID);
+	RELEASE_SOUND_ID(soundID);
+	return;
+}
+
+void cLeafBlowerSequence::PlayPTFXAndSound()
+{
+	if (!isUsingLeafBlower || sequenceState == STREAM_ASSETS_IN || sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+	{
+		StopAllPTFXAndSounds();
+		return;
+	}
+
+	if (!HAS_NAMED_PTFX_ASSET_LOADED(CORE_PTFX_ASSET))
+		REQUEST_NAMED_PTFX_ASSET(CORE_PTFX_ASSET);
+
+	if (!DOES_PARTICLE_FX_LOOPED_EXIST(leafBlowerPTFXHandle) && isUsingLeafBlower)
+	{
+		USE_PARTICLE_FX_ASSET(CORE_PTFX_ASSET);
+		leafBlowerPTFXHandle = START_PARTICLE_FX_LOOPED_ON_PED_BONE(ANM_LEAF_BLOWER, playerPed, 0.9f, 0.0f, -0.25f, 0.0f, 0.0f, 0.0f, BONETAG_PH_R_HAND, 1.0f, false, false, false);
+		soundID = GET_SOUND_ID();
+		PLAY_SOUND_FROM_ENTITY(soundID, leafBlowerSound, item, NULL, false, 0);
+	}
+	return;
+}
+
+void cLeafBlowerSequence::PlaySequence()
+{
+	const int rightHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_R_HAND);
+
+	SetPlayerControls(); //Player control should be disabled here and not during the sequence
+
+	switch (sequenceState)
+	{
+	case INITIALIZED:
+		item = CreateObject(leafBlowerHash);
+		SET_ENTITY_AS_MISSION_ENTITY(item, true, true);
+
+		if (!IS_ENTITY_ATTACHED(item))
+			ATTACH_ENTITY_TO_ENTITY(item, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+
+		SET_PED_MOVEMENT_CLIPSET(playerPed, leafBlowerClipSet, 0.25f);
+		TASK_LOOK_AT_ENTITY(playerPed, item, -1, SLF_SLOW_TURN_RATE, 2);
+		sequenceState = LOOP;
+		break;
+	case WAITING_FOR_ANIMATION_TO_END:
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
+			sequenceState = nextSequenceState;
+		break;
+	case LOOP:
+		break;
+	case EXITING:
+		RESET_PED_MOVEMENT_CLIPSET(playerPed, 0.25f);
+		TASK_CLEAR_LOOK_AT(playerPed);
+		sequenceState = FLUSH_ASSETS;
+		break;
+	case FLUSH_ASSETS:
+		DETACH_ENTITY(item, false, false);
+		SET_ENTITY_AS_NO_LONGER_NEEDED(&item);
+		SET_MODEL_AS_NO_LONGER_NEEDED(leafBlowerHash);
+		REMOVE_ANIM_SET(leafBlowerClipSet);
+		STOP_SOUND(soundID);
+		RELEASE_SOUND_ID(soundID);
+		RELEASE_NAMED_SCRIPT_AUDIO_BANK(leafBlowerAudioBank);
+		shouldStopSequence = false;
+		sequenceState = FINISHED;
+		break;
+	case STREAM_ASSETS_IN:
+		if (RequestModel(leafBlowerHash) && RequestAnimSet(leafBlowerClipSet) && RequestAudioBank(leafBlowerAudioBank))
+		{
+			sequenceState = INITIALIZED;
+			nextSequenceState = NULL;
+			shouldPlayerStandStill = false;
+			lastAnimDict = NULL;
+			lastAnim = NULL;
+			item = NULL;
+		}
+		break;
+	}
+
+	//Play PTFXs
+	PlayPTFXAndSound();
+
+	//Disable ped gestures and block non-player peds from reacting to temporary events
+	SetPedMovementAndReactions();
+	return;
+}
+
+void cLeafBlowerSequence::SetState(int state)
+{
+	if (state == EXITING && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
+		sequenceState = EXITING;
+	else if (state != EXITING)
+		sequenceState = state;
+
+	return;
+}
+
+void cLeafBlowerSequence::UpdateControls()
+{
+	if (sequenceState == EXITING || sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+		return;
+
+	AddScaleformInstructionalButton(control, input, "Toggle (hold to stop)", true);
+	RunScaleformInstructionalButtons();
+
+	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
+	{
+		controlTimer.Set(0);
+		return;
+	}
+
+	if (controlTimer.Get() < holdTime)
+	{
+		if (IS_DISABLED_CONTROL_JUST_RELEASED(control, input))
+			isUsingLeafBlower ^= true;
+	}
+	else if (IS_DISABLED_CONTROL_PRESSED(control, input))
+		shouldStopSequence = true;
+
+	return;
+}
+
+void cLeafBlowerSequence::ForceStop()
+{
+	if (sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+		return;
+
+	RESET_PED_MOVEMENT_CLIPSET(playerPed, 0.25f);
+	TASK_CLEAR_LOOK_AT(playerPed);
+	StopAllPTFXAndSounds();
+	shouldStopSequence = false;
+	sequenceState = FLUSH_ASSETS;
+	PlaySequence();
+	DeleteObject(&item);
+	return;
+}
+
+void cLeafBlowerSequence::Update()
+{
+	if (sequenceState != FINISHED)
+	{
+		if (!AdditionalChecks(playerPed))
+		{
+			ForceStop();
+			return;
+		}
+
+		PlaySequence();
+		if (shouldStopSequence)
+		{
+			if (stopTimer.Get() > maxStopTimer)
+			{
+				ForceStop();
+				return;
+			}
+
+			SetState(EXITING);
+		}	
+		else
+			stopTimer.Set(0);
+
+		UpdateControls();
 		return;
 	}
 
