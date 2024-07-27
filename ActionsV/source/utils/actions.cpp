@@ -11,6 +11,7 @@
 cSmokingSequence smokingSequence;
 cDrinkingSequence drinkingSequence;
 cLeafBlowerSequence leafBlowerSequence;
+cJogSequence jogSequence;
 
 static constexpr char* CORE_PTFX_ASSET = "core";
 
@@ -19,6 +20,7 @@ void UpdateSequences()
 	smokingSequence.Update();
 	drinkingSequence.Update();
 	leafBlowerSequence.Update();
+	jogSequence.Update();
 	return;
 }
 
@@ -26,7 +28,8 @@ static bool NoSequenceIsActive()
 {
 	if (smokingSequence.IsActive() ||
 		drinkingSequence.IsActive() ||
-		leafBlowerSequence.IsActive())
+		leafBlowerSequence.IsActive() ||
+		jogSequence.IsActive())
 		return false;
 
 	return true;
@@ -42,6 +45,10 @@ static void StopActiveSequence()
 
 	if (leafBlowerSequence.IsActive())
 		leafBlowerSequence.Stop();
+
+	if (jogSequence.IsActive())
+		jogSequence.Stop();
+
 	return;
 }
 
@@ -616,7 +623,7 @@ void cLeafBlowerSequence::PlaySequence()
 		if (!IS_ENTITY_ATTACHED(item))
 			ATTACH_ENTITY_TO_ENTITY(item, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 
-		SET_PED_MOVEMENT_CLIPSET(playerPed, leafBlowerClipSet, 0.25f);
+		SET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed, leafBlowerClipSet);
 		TASK_LOOK_AT_ENTITY(playerPed, item, -1, SLF_SLOW_TURN_RATE, 2);
 		sequenceState = LOOP;
 		break;
@@ -627,7 +634,7 @@ void cLeafBlowerSequence::PlaySequence()
 	case LOOP:
 		break;
 	case EXITING:
-		RESET_PED_MOVEMENT_CLIPSET(playerPed, 0.25f);
+		RESET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed);
 		TASK_CLEAR_LOOK_AT(playerPed);
 		sequenceState = FLUSH_ASSETS;
 		break;
@@ -635,7 +642,7 @@ void cLeafBlowerSequence::PlaySequence()
 		DETACH_ENTITY(item, false, false);
 		SET_ENTITY_AS_NO_LONGER_NEEDED(&item);
 		SET_MODEL_AS_NO_LONGER_NEEDED(leafBlowerHash);
-		REMOVE_ANIM_SET(leafBlowerClipSet);
+		REMOVE_CLIP_SET(leafBlowerClipSet);
 		STOP_SOUND(soundID);
 		RELEASE_SOUND_ID(soundID);
 		RELEASE_NAMED_SCRIPT_AUDIO_BANK(leafBlowerAudioBank);
@@ -643,7 +650,7 @@ void cLeafBlowerSequence::PlaySequence()
 		sequenceState = FINISHED;
 		break;
 	case STREAM_ASSETS_IN:
-		if (RequestModel(leafBlowerHash) && RequestAnimSet(leafBlowerClipSet) && RequestAudioBank(leafBlowerAudioBank))
+		if (RequestModel(leafBlowerHash) && RequestClipSet(leafBlowerClipSet) && RequestAudioBank(leafBlowerAudioBank))
 		{
 			sequenceState = INITIALIZED;
 			nextSequenceState = NULL;
@@ -703,7 +710,7 @@ void cLeafBlowerSequence::ForceStop()
 	if (sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
 		return;
 
-	RESET_PED_MOVEMENT_CLIPSET(playerPed, 0.25f);
+	RESET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed);
 	TASK_CLEAR_LOOK_AT(playerPed);
 	StopAllPTFXAndSounds();
 	shouldStopSequence = false;
@@ -734,6 +741,130 @@ void cLeafBlowerSequence::Update()
 
 			SetState(EXITING);
 		}	
+		else
+			stopTimer.Set(0);
+
+		UpdateControls();
+		return;
+	}
+
+	shouldStopSequence = false; //Reset var
+	return;
+}
+
+//////////////////////////////////JOG//////////////////////////////////
+static constexpr char* joggerAnimDict = "move_m@jogger";
+static constexpr char* joggerIdleAnim = "idle";
+static constexpr char* joggerWalkAnim = "run";
+
+void cJogSequence::PlaySequence()
+{
+	SetPlayerControls(); //Player control should be disabled here and not during the sequence
+
+	switch (sequenceState)
+	{
+	case INITIALIZED:
+		SET_PED_ALTERNATE_MOVEMENT_ANIM(playerPed, AAT_IDLE, joggerAnimDict, joggerIdleAnim, 8.0f, true);
+		SET_PED_ALTERNATE_MOVEMENT_ANIM(playerPed, AAT_WALK, joggerAnimDict, joggerWalkAnim, 8.0f, true);
+		sequenceState = LOOP;
+		break;
+	case WAITING_FOR_ANIMATION_TO_END:
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
+			sequenceState = nextSequenceState;
+		break;
+	case LOOP:
+		break;
+	case EXITING:
+		CLEAR_PED_ALTERNATE_MOVEMENT_ANIM(playerPed, AAT_IDLE, 8.0f);
+		CLEAR_PED_ALTERNATE_MOVEMENT_ANIM(playerPed, AAT_WALK, 8.0f);
+		sequenceState = FLUSH_ASSETS;
+		break;
+	case FLUSH_ASSETS:
+		REMOVE_ANIM_DICT(joggerAnimDict);
+		shouldStopSequence = false;
+		sequenceState = FINISHED;
+		break;
+	case STREAM_ASSETS_IN:
+		if (RequestAnimDict(joggerAnimDict))
+		{
+			sequenceState = INITIALIZED;
+			nextSequenceState = NULL;
+			shouldPlayerStandStill = false;
+			lastAnimDict = NULL;
+			lastAnim = NULL;
+		}
+		break;
+	}
+
+	//Disable ped gestures and block non-player peds from reacting to temporary events
+	SetPedMovementAndReactions();
+	return;
+}
+
+void cJogSequence::SetState(int state)
+{
+	if (state == EXITING && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
+		sequenceState = EXITING;
+	else if (state != EXITING)
+		sequenceState = state;
+
+	return;
+}
+
+void cJogSequence::UpdateControls()
+{
+	if (sequenceState == EXITING || sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+		return;
+
+	AddScaleformInstructionalButton(control, input, "Hold to stop", true);
+	RunScaleformInstructionalButtons();
+
+	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
+	{
+		controlTimer.Set(0);
+		return;
+	}
+
+	if (controlTimer.Get() > holdTime && IS_DISABLED_CONTROL_PRESSED(control, input))
+		shouldStopSequence = true;
+
+	return;
+}
+
+void cJogSequence::ForceStop()
+{
+	if (sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+		return;
+
+	CLEAR_PED_ALTERNATE_MOVEMENT_ANIM(playerPed, AAT_IDLE, 8.0f);
+	CLEAR_PED_ALTERNATE_MOVEMENT_ANIM(playerPed, AAT_WALK, 8.0f);
+	shouldStopSequence = false;
+	sequenceState = FLUSH_ASSETS;
+	PlaySequence();
+	return;
+}
+
+void cJogSequence::Update()
+{
+	if (sequenceState != FINISHED)
+	{
+		if (!AdditionalChecks(playerPed))
+		{
+			ForceStop();
+			return;
+		}
+
+		PlaySequence();
+		if (shouldStopSequence)
+		{
+			if (stopTimer.Get() > maxStopTimer)
+			{
+				ForceStop();
+				return;
+			}
+
+			SetState(EXITING);
+		}
 		else
 			stopTimer.Set(0);
 

@@ -1,5 +1,6 @@
 #pragma once
 
-void SmokeOption(bool shouldSmoke, bool shouldNotSmoke, int &smokingStatus);
-void DrinkOption(bool shouldDrink, bool shouldNotDrink, int &drinkingStatus);
-void LeafBlowerOption(bool shouldLeafBlower, bool shouldNotLeafBlower, int &leafBlowerStatus);
+void SmokeOption(bool should, bool shouldNot, int &status);
+void DrinkOption(bool should, bool shouldNot, int &status);
+void LeafBlowerOption(bool should, bool shouldNot, int &status);
+void JogOption(bool should, bool shouldNot, int &status);

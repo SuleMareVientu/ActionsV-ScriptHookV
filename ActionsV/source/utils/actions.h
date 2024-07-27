@@ -171,9 +171,38 @@ private:
 	void ForceStop();
 };
 
+class cJogSequence : public cSequence
+{
+public:
+	void Update();
+
+	cJogSequence() { maxStopTimer = 2000; }
+
+private:
+	enum SequenceState
+	{
+		FINISHED = SEQUENCE_FINISHED,
+		STREAM_ASSETS_IN = SEQUENCE_STREAM_ASSETS_IN,
+		INITIALIZED = SEQUENCE_INITIALIZED,
+		WAITING_FOR_ANIMATION_TO_END = SEQUENCE_WAITING_FOR_ANIMATION_TO_END,
+		FLUSH_ASSETS = SEQUENCE_FLUSH_ASSETS,
+		LOOP,
+		EXITING
+	};
+
+	void PlaySequence();
+
+	void SetState(int state);
+
+	void UpdateControls();
+
+	void ForceStop();
+};
+
 void UpdateSequences();
 
 // Sequences
 extern cSmokingSequence smokingSequence;
 extern cDrinkingSequence drinkingSequence;
 extern cLeafBlowerSequence leafBlowerSequence;
+extern cJogSequence jogSequence;

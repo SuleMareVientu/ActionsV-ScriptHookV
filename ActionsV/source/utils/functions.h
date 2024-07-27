@@ -16,7 +16,7 @@ void PrintInt(int value, int ms = 1);
 void PrintFloat(float value, int ms = 1);
 void PrintHelp(char* string, bool playSound = false, int overrideDuration = -1);
 bool RequestAnimDict(char* animDict);
-bool RequestAnimSet(char* animSet);
+bool RequestClipSet(char* animSet);
 bool RequestModel(Hash model);
 bool RequestAudioBank(char* bank);
 Object CreateObject(Hash model, float locX = NULL, float locY = NULL, float locZ = NULL, float rotX = NULL, float rotY = NULL, float rotZ = NULL);

@@ -8,55 +8,73 @@
 #include "..\script.h"
 
 //Smoke
-void SmokeOption(bool shouldSmoke, bool shouldNotSmoke, int &smokingStatus)
+void SmokeOption(bool should, bool shouldNot, int &status)
 {
-	if (shouldSmoke)
+	if (should)
 		smokingSequence.Start();
-	else if (shouldNotSmoke && smokingSequence.IsActive())
+	else if (shouldNot && smokingSequence.IsActive())
 	{
 		smokingSequence.Stop();
-		smokingStatus = 2;
+		status = 2;
 	}
 	else if (!smokingSequence.IsActive())
-		smokingStatus = -1;
+		status = -1;
 	else if (smokingSequence.ShouldStop())
-		smokingStatus = 2;
+		status = 2;
 
 	return;
 }
 
 //Drink
-void DrinkOption(bool shouldDrink, bool shouldNotDrink, int &drinkingStatus)
+void DrinkOption(bool should, bool shouldNot, int &status)
 {
-	if (shouldDrink)
+	if (should)
 		drinkingSequence.Start();
-	else if (shouldNotDrink && drinkingSequence.IsActive())
+	else if (shouldNot && drinkingSequence.IsActive())
 	{
 		drinkingSequence.Stop();
-		drinkingStatus = 2;
+		status = 2;
 	}
 	else if (!drinkingSequence.IsActive())
-		drinkingStatus = -1;
+		status = -1;
 	else if (drinkingSequence.ShouldStop())
-		drinkingStatus = 2;
+		status = 2;
 
 	return;
 }
 
 //Leaf Blower
-void LeafBlowerOption(bool shouldLeafBlower, bool shouldNotLeafBlower, int &leafBlowerStatus)
+void LeafBlowerOption(bool should, bool shouldNot, int &status)
 {
-	if (shouldLeafBlower)
+	if (should)
 		leafBlowerSequence.Start();
-	else if (shouldNotLeafBlower && leafBlowerSequence.IsActive())
+	else if (shouldNot && leafBlowerSequence.IsActive())
 	{
 		leafBlowerSequence.Stop();
-		leafBlowerStatus = 2;
+		status = 2;
 	}
 	else if (!leafBlowerSequence.IsActive())
-		leafBlowerStatus = -1;
+		status = -1;
 	else if (leafBlowerSequence.ShouldStop())
-		leafBlowerStatus = 2;
+		status = 2;
+
+	return;
+}
+
+//Jog
+void JogOption(bool should, bool shouldNot, int &status)
+{
+	if (should)
+		jogSequence.Start();
+	else if (shouldNot && jogSequence.IsActive())
+	{
+		jogSequence.Stop();
+		status = 2;
+	}
+	else if (!jogSequence.IsActive())
+		status = -1;
+	else if (jogSequence.ShouldStop())
+		status = 2;
 
 	return;
 }

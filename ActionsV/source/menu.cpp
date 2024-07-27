@@ -854,6 +854,7 @@ void Settings()
 int smokingStatus = -1;
 int drinkingStatus = -1;
 int leafBlowerStatus = -1;
+int jogStatus = -1;
 void SampleSub()
 {
 	AddTitle("Actions");
@@ -869,6 +870,10 @@ void SampleSub()
 	bool shouldLeafBlower = false, shouldNotLeafBlower = false;
 	AddLocal("Leaf Blower", leafBlowerSequence.IsActive(), shouldLeafBlower, shouldNotLeafBlower, leafBlowerStatus);
 	LeafBlowerOption(shouldLeafBlower, shouldNotLeafBlower, leafBlowerStatus);
+
+	bool shouldJog = false, shouldNotJog = false;
+	AddLocal("Jog", jogSequence.IsActive(), shouldJog, shouldNotJog, jogStatus);
+	JogOption(shouldJog, shouldNotJog, jogStatus);
 }
 
 void YourSub()

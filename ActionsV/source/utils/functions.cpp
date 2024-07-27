@@ -91,11 +91,11 @@ bool RequestAnimDict(char* animDict)
 	return true;
 }
 
-bool RequestAnimSet(char* animSet)
+bool RequestClipSet(char* animSet)
 {
-	if (!HAS_ANIM_SET_LOADED(animSet))
+	if (!HAS_CLIP_SET_LOADED(animSet))
 	{
-		REQUEST_ANIM_SET(animSet);
+		REQUEST_CLIP_SET(animSet);
 		return false;
 	}
 	return true;

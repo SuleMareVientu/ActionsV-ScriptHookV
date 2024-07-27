@@ -363,6 +363,14 @@ enum ScriptLookFlag
 	SLF_USE_REF_DIR_ABSOLUTE = 65536
 };
 
+enum AlternateAnimType
+{
+	AAT_IDLE,
+	AAT_WALK,
+	AAT_RUN,
+	AAT_SPRINT
+};
+
 enum ControlType {
 	PLAYER_CONTROL = 0,
 	CAMERA_CONTROL,
