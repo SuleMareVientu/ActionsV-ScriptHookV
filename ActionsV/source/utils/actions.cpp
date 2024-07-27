@@ -12,6 +12,8 @@ cSmokingSequence smokingSequence;
 cDrinkingSequence drinkingSequence;
 cLeafBlowerSequence leafBlowerSequence;
 cJogSequence jogSequence;
+cClipboardSequence clipboardSequence;
+cGuitarSequence guitarSequence;
 
 static constexpr char* CORE_PTFX_ASSET = "core";
 
@@ -21,6 +23,8 @@ void UpdateSequences()
 	drinkingSequence.Update();
 	leafBlowerSequence.Update();
 	jogSequence.Update();
+	clipboardSequence.Update();
+	guitarSequence.Update();
 	return;
 }
 
@@ -29,7 +33,9 @@ static bool NoSequenceIsActive()
 	if (smokingSequence.IsActive() ||
 		drinkingSequence.IsActive() ||
 		leafBlowerSequence.IsActive() ||
-		jogSequence.IsActive())
+		jogSequence.IsActive() ||
+		clipboardSequence.IsActive() ||
+		guitarSequence.IsActive())
 		return false;
 
 	return true;
@@ -49,9 +55,16 @@ static void StopActiveSequence()
 	if (jogSequence.IsActive())
 		jogSequence.Stop();
 
+	if (clipboardSequence.IsActive())
+		clipboardSequence.Stop();
+
+	if (guitarSequence.IsActive())
+		guitarSequence.Stop();
+
 	return;
 }
 
+#pragma region Sequence
 void cSequence::Start()
 {
 	if (!NoSequenceIsActive())
@@ -131,8 +144,10 @@ void cSequence::SetPedMovementAndReactions() const
 	}
 	return;
 }
+#pragma endregion
 
-//////////////////////////////////SMOKING//////////////////////////////////
+//////////////////////////////////SMOKING//////////////////////////////
+#pragma region Smoking
 static constexpr int cigaretteHash = 0x783A4BE3;		//Prop_AMB_Ciggy_01
 static constexpr char* smokeBaseAnimDict = "amb@world_human_smoking@male@male_a@base";
 static constexpr char* smokeBaseAnim = "base";
@@ -381,8 +396,10 @@ void cSmokingSequence::Update()
 	DeleteObject(&item); //Force delete old item
 	return;
 }
+#pragma endregion
 
-//////////////////////////////////DRINKING//////////////////////////////////
+//////////////////////////////////DRINKING/////////////////////////////
+#pragma region Drinking
 static constexpr int beerHash = 0x28BE7556;		//Prop_AMB_Beer_Bottle
 static constexpr char* drinkingAnimDict = "mp_player_intdrink";
 static constexpr char* drinkingEnterAnim = "intro_bottle";
@@ -570,8 +587,10 @@ void cDrinkingSequence::Update()
 	shouldStopSequence = false; //Reset var
 	return;
 }
+#pragma endregion
 
-//////////////////////////////////LEAF BLOWER//////////////////////////////////
+//////////////////////////////////LEAF BLOWER//////////////////////////
+#pragma region LeafBlower
 static constexpr int leafBlowerHash = 0x5F989485;		//Prop_Leaf_Blower_01
 static constexpr char* leafBlowerClipSet = "move_m@leaf_blower";
 static constexpr char* ANM_LEAF_BLOWER = "ent_anim_leaf_blower";
@@ -751,8 +770,10 @@ void cLeafBlowerSequence::Update()
 	shouldStopSequence = false; //Reset var
 	return;
 }
+#pragma endregion
 
 //////////////////////////////////JOG//////////////////////////////////
+#pragma region Jog
 static constexpr char* joggerAnimDict = "move_m@jogger";
 static constexpr char* joggerIdleAnim = "idle";
 static constexpr char* joggerWalkAnim = "run";
@@ -875,3 +896,286 @@ void cJogSequence::Update()
 	shouldStopSequence = false; //Reset var
 	return;
 }
+#pragma endregion
+
+//////////////////////////////////CLIPBOARD//////////////////////////
+#pragma region Clipboard
+static constexpr int clipboardHash = 0x3D387228;		//P_CS_Clipboard
+static constexpr char* clipboardClipSet = "move_m@clipboard";
+
+void cClipboardSequence::PlaySequence()
+{
+	const int leafHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_L_HAND);
+
+	SetPlayerControls(); //Player control should be disabled here and not during the sequence
+
+	switch (sequenceState)
+	{
+	case INITIALIZED:
+		item = CreateObject(clipboardHash);
+		SET_ENTITY_AS_MISSION_ENTITY(item, true, true);
+
+		if (!IS_ENTITY_ATTACHED(item))
+			ATTACH_ENTITY_TO_ENTITY(item, playerPed, leafHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+
+		SET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed, clipboardClipSet);
+		TASK_LOOK_AT_ENTITY(playerPed, item, -1, SLF_SLOW_TURN_RATE, 2);
+		sequenceState = LOOP;
+		break;
+	case WAITING_FOR_ANIMATION_TO_END:
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
+			sequenceState = nextSequenceState;
+		break;
+	case LOOP:
+		break;
+	case EXITING:
+		RESET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed);
+		TASK_CLEAR_LOOK_AT(playerPed);
+		sequenceState = FLUSH_ASSETS;
+		break;
+	case FLUSH_ASSETS:
+		DETACH_ENTITY(item, false, false);
+		SET_ENTITY_AS_NO_LONGER_NEEDED(&item);
+		SET_MODEL_AS_NO_LONGER_NEEDED(clipboardHash);
+		REMOVE_CLIP_SET(clipboardClipSet);
+		shouldStopSequence = false;
+		sequenceState = FINISHED;
+		break;
+	case STREAM_ASSETS_IN:
+		if (RequestModel(clipboardHash) && RequestClipSet(clipboardClipSet))
+		{
+			sequenceState = INITIALIZED;
+			nextSequenceState = NULL;
+			shouldPlayerStandStill = false;
+			lastAnimDict = NULL;
+			lastAnim = NULL;
+			item = NULL;
+		}
+		break;
+	}
+
+	//Disable ped gestures and block non-player peds from reacting to temporary events
+	SetPedMovementAndReactions();
+	return;
+}
+
+void cClipboardSequence::SetState(int state)
+{
+	if (state == EXITING && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
+		sequenceState = EXITING;
+	else if (state != EXITING)
+		sequenceState = state;
+
+	return;
+}
+
+void cClipboardSequence::UpdateControls()
+{
+	if (sequenceState == EXITING || sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+		return;
+
+	AddScaleformInstructionalButton(control, input, "Hold to stop", true);
+	RunScaleformInstructionalButtons();
+
+	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
+	{
+		controlTimer.Set(0);
+		return;
+	}
+
+	if (controlTimer.Get() > holdTime && IS_DISABLED_CONTROL_PRESSED(control, input))
+		shouldStopSequence = true;
+
+	return;
+}
+
+void cClipboardSequence::ForceStop()
+{
+	if (sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+		return;
+
+	RESET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed);
+	TASK_CLEAR_LOOK_AT(playerPed);
+	shouldStopSequence = false;
+	sequenceState = FLUSH_ASSETS;
+	PlaySequence();
+	DeleteObject(&item);
+	return;
+}
+
+void cClipboardSequence::Update()
+{
+	if (sequenceState != FINISHED)
+	{
+		if (!AdditionalChecks(playerPed))
+		{
+			ForceStop();
+			return;
+		}
+
+		PlaySequence();
+		if (shouldStopSequence)
+		{
+			if (stopTimer.Get() > maxStopTimer)
+			{
+				ForceStop();
+				return;
+			}
+
+			SetState(EXITING);
+		}
+		else
+			stopTimer.Set(0);
+
+		UpdateControls();
+		return;
+	}
+
+	shouldStopSequence = false; //Reset var
+	return;
+}
+#pragma endregion
+
+//////////////////////////////////GUITAR/////////////////////////////
+#pragma region Guitar
+static constexpr int guitarHash = 0xD5C0BC07;		//Prop_ACC_Guitar_01
+static constexpr char* guitarAnimDict = "amb@world_human_musician@guitar@male@base";
+static constexpr char* guitarBaseAnim = "base";
+
+void cGuitarSequence::StopAllAnims()
+{
+	if (IS_ENTITY_PLAYING_ANIM(playerPed, guitarAnimDict, guitarBaseAnim, 3))
+		STOP_ANIM_TASK(playerPed, guitarAnimDict, guitarBaseAnim, -2.0f);
+
+	REMOVE_ANIM_DICT(guitarAnimDict);
+	return;
+}
+
+void cGuitarSequence::PlaySequence()
+{
+	const int leftHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_L_HAND);
+
+	SetPlayerControls(); //Player control should be disabled here and not during the sequence
+
+	switch (sequenceState)
+	{
+	case INITIALIZED:
+		item = CreateObject(guitarHash);
+		SET_ENTITY_AS_MISSION_ENTITY(item, true, true);
+		ATTACH_ENTITY_TO_ENTITY(item, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+		PlayAnim(guitarAnimDict, guitarBaseAnim, upperSecondaryAF | AF_LOOPING);
+		sequenceState = LOOP;
+		break;
+	case WAITING_FOR_ANIMATION_TO_END:
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
+			sequenceState = nextSequenceState;
+		break;
+	case LOOP:
+		break;
+	case EXITING:
+		StopAllAnims();
+		sequenceState = FLUSH_ASSETS;
+		break;
+	case FLUSH_ASSETS:
+		REMOVE_ANIM_DICT(guitarAnimDict);
+		DETACH_ENTITY(item, false, false);
+		SET_ENTITY_AS_NO_LONGER_NEEDED(&item);
+		SET_MODEL_AS_NO_LONGER_NEEDED(guitarHash);
+		shouldStopSequence = false;
+		sequenceState = FINISHED;
+		break;
+	case STREAM_ASSETS_IN:
+		if (RequestModel(guitarHash) && RequestAnimDict(guitarAnimDict))
+		{
+			sequenceState = INITIALIZED;
+			nextSequenceState = NULL;
+			shouldPlayerStandStill = false;
+			lastAnimDict = NULL;
+			lastAnim = NULL;
+			item = NULL;
+		}
+		break;
+	}
+
+	//Disable ped gestures and block non-player peds from reacting to temporary events
+	SetPedMovementAndReactions();
+	return;
+}
+
+void cGuitarSequence::SetState(int state)
+{
+	STOP_ANIM_TASK(playerPed, guitarAnimDict, guitarBaseAnim, -2.0f);
+
+	if (state == EXITING && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
+		sequenceState = EXITING;
+	else if (state != EXITING)
+		sequenceState = state;
+
+	return;
+}
+
+void cGuitarSequence::UpdateControls()
+{
+	if (sequenceState == EXITING || sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+		return;
+
+	AddScaleformInstructionalButton(control, input, "Hold to stop", true);
+	RunScaleformInstructionalButtons();
+
+	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
+	{
+		controlTimer.Set(0);
+		return;
+	}
+
+	if (controlTimer.Get() > holdTime && IS_DISABLED_CONTROL_PRESSED(control, input))
+		shouldStopSequence = true;
+
+	return;
+}
+
+void cGuitarSequence::ForceStop()
+{
+	if (sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+		return;
+
+	StopAllAnims();
+	shouldStopSequence = false;
+	sequenceState = FLUSH_ASSETS;
+	PlaySequence();
+	DeleteObject(&item);
+	return;
+}
+
+void cGuitarSequence::Update()
+{
+	if (sequenceState != FINISHED)
+	{
+		if (!AdditionalChecks(playerPed))
+		{
+			ForceStop();
+			return;
+		}
+
+		PlaySequence();
+		if (shouldStopSequence)
+		{
+			if (stopTimer.Get() > maxStopTimer)
+			{
+				ForceStop();
+				return;
+			}
+
+			SetState(EXITING);
+		}
+		else
+			stopTimer.Set(0);
+
+		UpdateControls();
+		return;
+	}
+
+	shouldStopSequence = false; //Reset var
+	return;
+}
+#pragma endregion

@@ -855,25 +855,35 @@ int smokingStatus = -1;
 int drinkingStatus = -1;
 int leafBlowerStatus = -1;
 int jogStatus = -1;
+int clipboardStatus = -1;
+int guitarStatus = -1;
 void SampleSub()
 {
 	AddTitle("Actions");
 
-	bool shouldSmoke = false, shouldNotSmoke = false;
-	AddLocal("Smoke", smokingSequence.IsActive(), shouldSmoke, shouldNotSmoke, smokingStatus);
-	SmokeOption(shouldSmoke, shouldNotSmoke, smokingStatus);
+	bool should = false, shouldNot = false;
+	AddLocal("Smoke", smokingSequence.IsActive(), should, shouldNot, smokingStatus);
+	SequenceOption(should, shouldNot, smokingStatus, smokingSequence);
 
-	bool shouldDrink = false, shouldNotDrink = false;
-	AddLocal("Drink", drinkingSequence.IsActive(), shouldDrink, shouldNotDrink, drinkingStatus);
-	DrinkOption(shouldDrink, shouldNotDrink, drinkingStatus);
+	should = false; shouldNot = false;
+	AddLocal("Drink", drinkingSequence.IsActive(), should, shouldNot, drinkingStatus);
+	SequenceOption(should, shouldNot, drinkingStatus, drinkingSequence);
 
-	bool shouldLeafBlower = false, shouldNotLeafBlower = false;
-	AddLocal("Leaf Blower", leafBlowerSequence.IsActive(), shouldLeafBlower, shouldNotLeafBlower, leafBlowerStatus);
-	LeafBlowerOption(shouldLeafBlower, shouldNotLeafBlower, leafBlowerStatus);
+	should = false; shouldNot = false;
+	AddLocal("Leaf Blower", leafBlowerSequence.IsActive(), should, shouldNot, leafBlowerStatus);
+	SequenceOption(should, shouldNot, leafBlowerStatus, leafBlowerSequence);
 
-	bool shouldJog = false, shouldNotJog = false;
-	AddLocal("Jog", jogSequence.IsActive(), shouldJog, shouldNotJog, jogStatus);
-	JogOption(shouldJog, shouldNotJog, jogStatus);
+	should = false; shouldNot = false;
+	AddLocal("Jog", jogSequence.IsActive(), should, shouldNot, jogStatus);
+	SequenceOption(should, shouldNot, jogStatus, jogSequence);
+
+	should = false; shouldNot = false;
+	AddLocal("Clipboard", clipboardSequence.IsActive(), should, shouldNot, clipboardStatus);
+	SequenceOption(should, shouldNot, clipboardStatus, clipboardSequence);
+
+	should = false; shouldNot = false;
+	AddLocal("Guitar", guitarSequence.IsActive(), should, shouldNot, guitarStatus);
+	SequenceOption(should, shouldNot, guitarStatus, guitarSequence);
 }
 
 void YourSub()
