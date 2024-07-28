@@ -44,18 +44,24 @@ protected:
 	int nextSequenceState = NULL;
 	bool isSequenceActive = false;
 	bool shouldStopSequence = false;
+
 	char* lastAnimDict = NULL;
 	char* lastAnim = NULL;
+
 	bool disabledControlsLastFrame = false;
 	bool shouldPlayerStandStill = false;
+
+	bool canSprint = false;
+	float maxMoveBlendRatio = PEDMOVEBLENDRATIO_WALK;
+
 	Timer stopTimer;
 	int maxStopTimer = 10000;
+
 	ControlType control = PLAYER_CONTROL;
 	ControlAction input = INPUT_JUMP;
 	Timer controlTimer;
 	short holdTime = 250;
 
-	void PlayAnim(char *animDict, char *anim, int flag, int duration = -1);
 	void PlayAnimAndWait(char *animDict, char *anim, int flag, int nextState, float startPhase = 0.0f, float blendInSpeed = 1.5f, float blendOutSpeed = -1.5f, bool standStill = false, int duration = -1);
 	void SetPlayerControls();
 	void SetPedMovementAndReactions() const;
@@ -142,7 +148,7 @@ class cLeafBlowerSequence : public cSequence
 public:
 	void Update();
 
-	cLeafBlowerSequence() { maxStopTimer = 2000; }
+	cLeafBlowerSequence() { maxStopTimer = 2000; canSprint = true; maxMoveBlendRatio = PEDMOVEBLENDRATIO_SPRINT; }
 
 private:
 	enum SequenceState
@@ -207,7 +213,7 @@ class cClipboardSequence : public cSequence
 public:
 	void Update();
 
-	cClipboardSequence() { maxStopTimer = 2000; }
+	cClipboardSequence() { maxStopTimer = 2000; canSprint = true; maxMoveBlendRatio = PEDMOVEBLENDRATIO_SPRINT; }
 
 private:
 	enum SequenceState
@@ -296,6 +302,102 @@ private:
 	void ForceStop();
 };
 
+class cMopSequence : public cSequence
+{
+public:
+	void Update();
+
+	cMopSequence() { maxStopTimer = 2000; canSprint = true; maxMoveBlendRatio = PEDMOVEBLENDRATIO_SPRINT; }
+
+private:
+	enum SequenceState
+	{
+		FINISHED = SEQUENCE_FINISHED,
+		STREAM_ASSETS_IN = SEQUENCE_STREAM_ASSETS_IN,
+		INITIALIZED = SEQUENCE_INITIALIZED,
+		WAITING_FOR_ANIMATION_TO_END = SEQUENCE_WAITING_FOR_ANIMATION_TO_END,
+		FLUSH_ASSETS = SEQUENCE_FLUSH_ASSETS,
+		LOOP,
+		EXITING
+	};
+
+	Object item = NULL;
+
+	void PlaySequence();
+
+	void SetState(int state);
+
+	void UpdateControls();
+
+	void ForceStop();
+};
+
+class cMopWithBucketSequence : public cSequence
+{
+public:
+	void Update();
+
+	cMopWithBucketSequence() { maxStopTimer = 2000; }
+
+private:
+	enum SequenceState
+	{
+		FINISHED = SEQUENCE_FINISHED,
+		STREAM_ASSETS_IN = SEQUENCE_STREAM_ASSETS_IN,
+		INITIALIZED = SEQUENCE_INITIALIZED,
+		WAITING_FOR_ANIMATION_TO_END = SEQUENCE_WAITING_FOR_ANIMATION_TO_END,
+		FLUSH_ASSETS = SEQUENCE_FLUSH_ASSETS,
+		LOOP,
+		EXITING
+	};
+
+	Object mop = NULL;
+	Object bucket = NULL;
+
+	void PlaySequence();
+
+	void SetState(int state);
+
+	void UpdateControls();
+
+	void ForceStop();
+};
+
+class cCameraSequence : public cSequence
+{
+public:
+	void Update();
+
+	cCameraSequence() { maxStopTimer = 2000; canSprint = true; maxMoveBlendRatio = PEDMOVEBLENDRATIO_SPRINT; }
+
+private:
+	enum SequenceState
+	{
+		FINISHED = SEQUENCE_FINISHED,
+		STREAM_ASSETS_IN = SEQUENCE_STREAM_ASSETS_IN,
+		INITIALIZED = SEQUENCE_INITIALIZED,
+		WAITING_FOR_ANIMATION_TO_END = SEQUENCE_WAITING_FOR_ANIMATION_TO_END,
+		FLUSH_ASSETS = SEQUENCE_FLUSH_ASSETS,
+		LOOP,
+		TAKE_PHOTO,
+		EXITING
+	};
+
+	Object camera = NULL;
+	Object flashUnit = NULL;
+	bool playFlashSound = false;
+
+	void PlayPTFXAndSound();
+
+	void PlaySequence();
+
+	void SetState(int state);
+
+	void UpdateControls();
+
+	void ForceStop();
+};
+
 void UpdateSequences();
 
 // Sequences
@@ -306,3 +408,6 @@ extern cJogSequence jogSequence;
 extern cClipboardSequence clipboardSequence;
 extern cGuitarSequence guitarSequence;
 extern cBongosSequence bongosSequence;
+extern cMopSequence mopSequence;
+extern cMopWithBucketSequence mopWithBucketSequence;
+extern cCameraSequence cameraSequence;

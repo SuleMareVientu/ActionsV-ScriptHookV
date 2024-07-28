@@ -3,10 +3,10 @@
 // #include <types.h> //Already included in globals.h
 //Custom
 #include "functions.h"
-#include "..\globals.h"
 #include "..\script.h"
 
 //Custom implementation of TIMERA and TIMERB natives
+#pragma region Timer
 void Timer::Set(int value)
 {
 	gameTimer = GET_GAME_TIMER() + value;
@@ -17,7 +17,9 @@ int Timer::Get() const
 {
 	return (GET_GAME_TIMER() - gameTimer);
 }
+#pragma endregion
 
+#pragma region Ped Flags
 void EnablePedConfigFlag(Ped ped, int flag)
 {
 	if (!PED::GET_PED_CONFIG_FLAG(ped, flag, false))
@@ -45,7 +47,9 @@ void DisablePedResetFlag(Ped ped, int flag)
 		PED::SET_PED_RESET_FLAG(ped, flag, false);
 	return;
 }
+#pragma endregion
 
+#pragma region Print
 void Print(char* string, int ms)
 {
 	BEGIN_TEXT_COMMAND_PRINT("STRING");
@@ -77,6 +81,40 @@ void PrintHelp(char* string, bool playSound, int overrideDuration)
 	END_TEXT_COMMAND_DISPLAY_HELP(NULL, false, playSound, overrideDuration);
 	return;
 }
+#pragma endregion
+
+#pragma region Streaming
+bool RequestModel(Hash model)
+{
+	if (!IS_MODEL_VALID(model))
+		return false;
+
+	if (!HAS_MODEL_LOADED(model))
+	{
+		REQUEST_MODEL(model);
+		return false;
+	}
+	return true;
+}
+
+Object CreateObject(Hash model, float locX, float locY, float locZ, float rotX, float rotY, float rotZ)
+{
+	Object obj = CREATE_OBJECT_NO_OFFSET(model, locX, locY, locZ, false, false, false);
+	if (rotX != NULL || rotY != NULL || rotZ != NULL)
+		SET_ENTITY_ROTATION(obj, rotX, rotY, rotZ, 2, false);
+
+	return obj;
+}
+
+void DeleteObject(Object* obj)
+{
+	if (DOES_ENTITY_EXIST(*obj))
+	{
+		SET_ENTITY_AS_MISSION_ENTITY(*obj, true, true);
+		DELETE_OBJECT(obj);
+	}
+	return;
+}
 
 bool RequestAnimDict(char* animDict)
 {
@@ -91,24 +129,22 @@ bool RequestAnimDict(char* animDict)
 	return true;
 }
 
+bool StopAnimTask(Entity entity, const char* animDict, const char* animName, float blendDelta)
+{
+	if (IS_ENTITY_PLAYING_ANIM(entity, animDict, animName, 3))
+	{
+		STOP_ANIM_TASK(entity, animDict, animName, blendDelta);
+		return true;
+	}
+
+	return false;
+}
+
 bool RequestClipSet(char* animSet)
 {
 	if (!HAS_CLIP_SET_LOADED(animSet))
 	{
 		REQUEST_CLIP_SET(animSet);
-		return false;
-	}
-	return true;
-}
-
-bool RequestModel(Hash model)
-{
-	if (!IS_MODEL_VALID(model))
-		return false;
-
-	if (!HAS_MODEL_LOADED(model))
-	{
-		REQUEST_MODEL(model);
 		return false;
 	}
 	return true;
@@ -133,23 +169,34 @@ bool StopAudioStream()
 	return false;
 }
 
-Object CreateObject(Hash model, float locX, float locY, float locZ, float rotX, float rotY, float rotZ)
+bool RequestPTFXAsset(char* asset)
 {
-	RequestModel(model);
-	Object obj = CREATE_OBJECT_NO_OFFSET(model, locX, locY, locZ, false, false, false);
-	if (rotX != NULL || rotY != NULL || rotZ != NULL)
-		SET_ENTITY_ROTATION(obj, rotX, rotY, rotZ, 2, false);
-	return obj;
+	if (!HAS_NAMED_PTFX_ASSET_LOADED(asset))
+	{
+		REQUEST_NAMED_PTFX_ASSET(asset);
+		return false;
+	}
+	return true;
+}
+#pragma endregion
+
+#pragma region Particle Effects
+bool StartParticleFxNonLoopedOnEntity(const char* PTFXAsset, const char* effectName, Entity entity, float scale, float offsetX, float offsetY, float offsetZ, float rotX, float rotY, float rotZ, bool axisX, bool axisY, bool axisZ)
+{
+	USE_PARTICLE_FX_ASSET(PTFXAsset);
+	return START_PARTICLE_FX_NON_LOOPED_ON_ENTITY(effectName, entity, offsetX, offsetY, offsetZ, rotX, rotY, rotZ, scale, axisX, axisY, axisZ);
 }
 
-void DeleteObject(Object* obj)
+int StartParticleFxLoopedOnPedBone(const char* PTFXAsset, const char* effectName, Ped ped, int boneIndex, float scale, float xOffset, float yOffset, float zOffset, float xRot, float yRot, float zRot, bool xAxis, bool yAxis, bool zAxis)
 {
-	if (DOES_ENTITY_EXIST(*obj))
-	{
-		SET_ENTITY_AS_MISSION_ENTITY(*obj, true, true);
-		DELETE_OBJECT(obj);
-	}
-	return;
+	USE_PARTICLE_FX_ASSET(PTFXAsset);
+	return START_PARTICLE_FX_LOOPED_ON_PED_BONE(effectName, ped, xOffset, yOffset, zOffset, xRot, yRot, zRot, boneIndex, scale, xAxis, yAxis, zAxis);
+}
+
+bool StartParticleFxNonLoopedOnPedBone(const char* PTFXAsset, const char* effectName, Ped ped, int boneIndex, float scale, float offsetX, float offsetY, float offsetZ, float rotX, float rotY, float rotZ, bool axisX, bool axisY, bool axisZ)
+{
+	USE_PARTICLE_FX_ASSET(PTFXAsset);
+	return START_PARTICLE_FX_NON_LOOPED_ON_PED_BONE(effectName, ped, offsetX, offsetY, offsetZ, rotX, rotY, rotZ, boneIndex, scale, axisX, axisY, axisZ);
 }
 
 void StopPTFX(int* PTFXHandle)
@@ -163,7 +210,9 @@ void StopPTFX(int* PTFXHandle)
 	}
 	return;
 }
+#pragma endregion
 
+#pragma region Player Actions Control
 bool AdditionalChecks(Ped ped, bool countEnemies)
 {
 	if (!DOES_ENTITY_EXIST(ped) ||
@@ -192,8 +241,20 @@ bool AdditionalChecks(Ped ped, bool countEnemies)
 	return true;
 }
 
-void DisablePlayerActionsThisFrame()
+void DisablePlayerActionsThisFrame(bool canSprint, float maxMoveBlendRatio)
 {
+	Ped ped = PLAYER_PED_ID();
+	SET_PED_RESET_FLAG(ped, PRF_DisablePlayerJumping, true);
+	SET_PED_RESET_FLAG(ped, PRF_DisablePlayerVaulting, true);
+
+	if (!canSprint)
+	{
+		DISABLE_CONTROL_ACTION(PLAYER_CONTROL, INPUT_SPRINT, false);
+		SET_PED_MAX_MOVE_BLEND_RATIO(ped, PEDMOVEBLENDRATIO_WALK);	//Prevents the player from running/sprinting
+	}
+	else
+		SET_PED_MAX_MOVE_BLEND_RATIO(ped, maxMoveBlendRatio);
+
 	DISABLE_CONTROL_ACTION(PLAYER_CONTROL, INPUT_TALK, true);	//Disables talking
 	DISABLE_CONTROL_ACTION(PLAYER_CONTROL, INPUT_WEAPON_WHEEL_UD, false);
 	DISABLE_CONTROL_ACTION(PLAYER_CONTROL, INPUT_WEAPON_WHEEL_LR, false);
@@ -203,7 +264,6 @@ void DisablePlayerActionsThisFrame()
 	DISABLE_CONTROL_ACTION(PLAYER_CONTROL, INPUT_SELECT_PREV_WEAPON, false);
 	DISABLE_CONTROL_ACTION(PLAYER_CONTROL, INPUT_CHARACTER_WHEEL, false);
 	DISABLE_CONTROL_ACTION(PLAYER_CONTROL, INPUT_MULTIPLAYER_INFO, false);
-	DISABLE_CONTROL_ACTION(PLAYER_CONTROL, INPUT_SPRINT, false);
 	DISABLE_CONTROL_ACTION(PLAYER_CONTROL, INPUT_JUMP, false);
 	DISABLE_CONTROL_ACTION(PLAYER_CONTROL, INPUT_ENTER, false);
 	DISABLE_CONTROL_ACTION(PLAYER_CONTROL, INPUT_ATTACK, false);
@@ -262,11 +322,6 @@ void DisablePlayerActionsThisFrame()
 	DISABLE_CONTROL_ACTION(PLAYER_CONTROL, INPUT_SNIPER_ZOOM_OUT, false);
 	DISABLE_CONTROL_ACTION(PLAYER_CONTROL, INPUT_SNIPER_ZOOM_IN_ALTERNATE, false);
 	DISABLE_CONTROL_ACTION(PLAYER_CONTROL, INPUT_SNIPER_ZOOM_OUT_ALTERNATE, false);
-
-	Ped ped = PLAYER_PED_ID();
-	SET_PED_RESET_FLAG(ped, PRF_DisablePlayerJumping, true);
-	SET_PED_RESET_FLAG(ped, PRF_DisablePlayerVaulting, true);
-	SET_PED_MAX_MOVE_BLEND_RATIO(ped, PEDMOVEBLENDRATIO_WALK);	//Prevents the player from running/sprinting
 	return;
 }
 
@@ -286,15 +341,9 @@ void DisablePlayerControlThisFrame()
 	DISABLE_CONTROL_ACTION(PLAYER_CONTROL, INPUT_MOVE_DOWN, false);
 	return;
 }
+#pragma endregion
 
-void PlayAmbientSpeech(Ped ped, char* speechName)
-{
-	AUDIO::SET_AUDIO_FLAG("IsDirectorModeActive", true);
-	AUDIO::PLAY_PED_AMBIENT_SPEECH_NATIVE(ped, speechName, "SPEECH_PARAMS_FORCE_NORMAL", false);
-	AUDIO::SET_AUDIO_FLAG("IsDirectorModeActive", false);
-	return;
-}
-
+#pragma region Scaleforms
 static ScaleformInstructionalButtons DisplayStruct;
 static int InstructionalButtonsScaleformIndex = NULL;
 void RunScaleformInstructionalButtons(bool refresh)
@@ -365,3 +414,14 @@ void AddScaleformInstructionalButton(int iButtonSlotControl, int iButtonSlotInpu
 	DisplayStruct.ButtonCount++;
 	return;
 }
+#pragma endregion
+
+#pragma region Misc
+void PlayAmbientSpeech(Ped ped, char* speechName)
+{
+	AUDIO::SET_AUDIO_FLAG("IsDirectorModeActive", true);
+	AUDIO::PLAY_PED_AMBIENT_SPEECH_NATIVE(ped, speechName, "SPEECH_PARAMS_FORCE_NORMAL", false);
+	AUDIO::SET_AUDIO_FLAG("IsDirectorModeActive", false);
+	return;
+}
+#pragma endregion

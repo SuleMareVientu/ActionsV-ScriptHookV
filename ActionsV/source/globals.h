@@ -18,6 +18,20 @@ constexpr float PEDMOVEBLENDRATIO_WALK = 1.0f;
 constexpr float PEDMOVEBLENDRATIO_RUN = 2.0f;
 constexpr float PEDMOVEBLENDRATIO_SPRINT = 3.0f;
 
+//Animation blend in/out ratios
+constexpr float WALK_BLEND_IN = 1.5f;			// 20frms
+constexpr float WALK_BLEND_OUT = -1.5f;			// 20frms
+constexpr float REALLY_SLOW_BLEND_IN = 2.0f;	// 15frms
+constexpr float REALLY_SLOW_BLEND_OUT = -2.0f;	// 15frms
+constexpr float SLOW_BLEND_IN = 4.0f;			// 8frms
+constexpr float SLOW_BLEND_OUT = -4.0f;			// 8frms
+constexpr float NORMAL_BLEND_IN = 8.0f;			// 4frms
+constexpr float NORMAL_BLEND_OUT = -8.0f;		// 4frms
+constexpr float FAST_BLEND_IN = 16.0f;			// 2frms
+constexpr float FAST_BLEND_OUT = -16.0f;		// 2frms
+constexpr float INSTANT_BLEND_IN = 1000.0f;		// 0frms
+constexpr float INSTANT_BLEND_OUT = -1000.0f;	// 0frms
+
 //Enums
 enum HUDComponent {
 	HUD_WANTED_STARS = 1,

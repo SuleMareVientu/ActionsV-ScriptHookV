@@ -858,6 +858,9 @@ int jogStatus = -1;
 int clipboardStatus = -1;
 int guitarStatus = -1;
 int bongosStatus = -1;
+int mopSatus = -1;
+int mopWithBucketStatus = -1;
+int cameraStatus = -1;
 void SampleSub()
 {
 	AddTitle("Actions");
@@ -889,6 +892,18 @@ void SampleSub()
 	should = false; shouldNot = false;
 	AddLocal("Bongos", bongosSequence.IsActive(), should, shouldNot, bongosStatus);
 	SequenceOption(should, shouldNot, bongosStatus, bongosSequence);
+
+	should = false; shouldNot = false;
+	AddLocal("Mop", mopSequence.IsActive(), should, shouldNot, mopSatus);
+	SequenceOption(should, shouldNot, mopSatus, mopSequence);
+
+	should = false; shouldNot = false;
+	AddLocal("Mop with bucket", mopWithBucketSequence.IsActive(), should, shouldNot, mopWithBucketStatus);
+	SequenceOption(should, shouldNot, mopWithBucketStatus, mopWithBucketSequence);
+
+	should = false; shouldNot = false;
+	AddLocal("Camera", cameraSequence.IsActive(), should, shouldNot, cameraStatus);
+	SequenceOption(should, shouldNot, cameraStatus, cameraSequence);
 }
 
 void YourSub()
