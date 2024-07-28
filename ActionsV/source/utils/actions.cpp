@@ -14,52 +14,39 @@ cLeafBlowerSequence leafBlowerSequence;
 cJogSequence jogSequence;
 cClipboardSequence clipboardSequence;
 cGuitarSequence guitarSequence;
+cBongosSequence bongosSequence;
+
+static constexpr int maxSequences = 7;
+cSequence* sequences[maxSequences] = { &smokingSequence, &drinkingSequence, &leafBlowerSequence, &jogSequence, &clipboardSequence, 
+									   &guitarSequence, &bongosSequence };
 
 static constexpr char* CORE_PTFX_ASSET = "core";
 
 void UpdateSequences()
 {
-	smokingSequence.Update();
-	drinkingSequence.Update();
-	leafBlowerSequence.Update();
-	jogSequence.Update();
-	clipboardSequence.Update();
-	guitarSequence.Update();
+	LOOP(i, maxSequences)
+	{ sequences[i]->Update(); }
 	return;
 }
 
 static bool NoSequenceIsActive()
 {
-	if (smokingSequence.IsActive() ||
-		drinkingSequence.IsActive() ||
-		leafBlowerSequence.IsActive() ||
-		jogSequence.IsActive() ||
-		clipboardSequence.IsActive() ||
-		guitarSequence.IsActive())
-		return false;
+	LOOP(i, maxSequences)
+	{
+		if (sequences[i]->IsActive())
+			return false;
+	}
 
 	return true;
 }
 
 static void StopActiveSequence()
 {
-	if (smokingSequence.IsActive())
-		smokingSequence.Stop();
-
-	if (drinkingSequence.IsActive())
-		drinkingSequence.Stop();
-
-	if (leafBlowerSequence.IsActive())
-		leafBlowerSequence.Stop();
-
-	if (jogSequence.IsActive())
-		jogSequence.Stop();
-
-	if (clipboardSequence.IsActive())
-		clipboardSequence.Stop();
-
-	if (guitarSequence.IsActive())
-		guitarSequence.Stop();
+	LOOP(i, maxSequences)
+	{
+		if (sequences[i]->IsActive())
+			sequences[i]->Stop();
+	}
 
 	return;
 }
@@ -135,6 +122,7 @@ void cSequence::SetPedMovementAndReactions() const
 	}
 	else
 	{
+		EnablePedResetFlag(playerPed, PRF_DisableSecondaryAnimationTasks);
 		SET_PED_CAN_PLAY_GESTURE_ANIMS(playerPed, false);
 		SET_PED_CAN_PLAY_AMBIENT_ANIMS(playerPed, false);
 		SET_PED_CAN_PLAY_AMBIENT_BASE_ANIMS(playerPed, false);
@@ -237,10 +225,7 @@ void cSmokingSequence::PlaySequence()
 	case INITIALIZED:
 		item = CreateObject(cigaretteHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, true, true);
-
-		if (!IS_ENTITY_ATTACHED(item)) //&& GET_ENTITY_ANIM_CURRENT_TIME(playerPed, smokeBaseAnimDict, smokeBaseAnim) > 0.225f)
-			ATTACH_ENTITY_TO_ENTITY(item, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
-
+		ATTACH_ENTITY_TO_ENTITY(item, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 		PlayAnimAndWait(smokeEnterAnimDict, smokeEnterAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, LOOP);
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
@@ -622,7 +607,7 @@ void cLeafBlowerSequence::PlayPTFXAndSound()
 		USE_PARTICLE_FX_ASSET(CORE_PTFX_ASSET);
 		leafBlowerPTFXHandle = START_PARTICLE_FX_LOOPED_ON_PED_BONE(ANM_LEAF_BLOWER, playerPed, 0.9f, 0.0f, -0.25f, 0.0f, 0.0f, 0.0f, BONETAG_PH_R_HAND, 1.0f, false, false, false);
 		soundID = GET_SOUND_ID();
-		PLAY_SOUND_FROM_ENTITY(soundID, leafBlowerSound, item, NULL, false, 0);
+		PLAY_SOUND_FROM_ENTITY(soundID, leafBlowerSound, playerPed, NULL, false, 0);
 	}
 	return;
 }
@@ -638,10 +623,7 @@ void cLeafBlowerSequence::PlaySequence()
 	case INITIALIZED:
 		item = CreateObject(leafBlowerHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, true, true);
-
-		if (!IS_ENTITY_ATTACHED(item))
-			ATTACH_ENTITY_TO_ENTITY(item, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
-
+		ATTACH_ENTITY_TO_ENTITY(item, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 		SET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed, leafBlowerClipSet);
 		TASK_LOOK_AT_ENTITY(playerPed, item, -1, SLF_SLOW_TURN_RATE, 2);
 		sequenceState = LOOP;
@@ -1041,6 +1023,8 @@ void cClipboardSequence::Update()
 static constexpr int guitarHash = 0xD5C0BC07;		//Prop_ACC_Guitar_01
 static constexpr char* guitarAnimDict = "amb@world_human_musician@guitar@male@base";
 static constexpr char* guitarBaseAnim = "base";
+//static constexpr char* guitarAudioBank = "STREAMS/AMBIENT_MUSICIAN_GUITAR";
+static constexpr char* guitarStream = "hash_80dc636b_biknqys_collision";
 
 void cGuitarSequence::StopAllAnims()
 {
@@ -1060,11 +1044,16 @@ void cGuitarSequence::PlaySequence()
 	switch (sequenceState)
 	{
 	case INITIALIZED:
-		item = CreateObject(guitarHash);
-		SET_ENTITY_AS_MISSION_ENTITY(item, true, true);
-		ATTACH_ENTITY_TO_ENTITY(item, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
-		PlayAnim(guitarAnimDict, guitarBaseAnim, upperSecondaryAF | AF_LOOPING);
-		sequenceState = LOOP;
+		StopAudioStream();
+		if (LOAD_STREAM(guitarStream, NULL))
+		{
+			PLAY_STREAM_FROM_PED(playerPed);
+			item = CreateObject(guitarHash);
+			SET_ENTITY_AS_MISSION_ENTITY(item, true, true);
+			ATTACH_ENTITY_TO_ENTITY(item, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+			PlayAnim(guitarAnimDict, guitarBaseAnim, upperSecondaryAF | AF_LOOPING);
+			sequenceState = LOOP;
+		}
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
 		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
@@ -1074,6 +1063,7 @@ void cGuitarSequence::PlaySequence()
 		break;
 	case EXITING:
 		StopAllAnims();
+		StopAudioStream();
 		sequenceState = FLUSH_ASSETS;
 		break;
 	case FLUSH_ASSETS:
@@ -1140,6 +1130,7 @@ void cGuitarSequence::ForceStop()
 		return;
 
 	StopAllAnims();
+	StopAudioStream();
 	shouldStopSequence = false;
 	sequenceState = FLUSH_ASSETS;
 	PlaySequence();
@@ -1148,6 +1139,158 @@ void cGuitarSequence::ForceStop()
 }
 
 void cGuitarSequence::Update()
+{
+	if (sequenceState != FINISHED)
+	{
+		if (!AdditionalChecks(playerPed))
+		{
+			ForceStop();
+			return;
+		}
+
+		PlaySequence();
+		if (shouldStopSequence)
+		{
+			if (stopTimer.Get() > maxStopTimer)
+			{
+				ForceStop();
+				return;
+			}
+
+			SetState(EXITING);
+		}
+		else
+			stopTimer.Set(0);
+
+		UpdateControls();
+		return;
+	}
+
+	shouldStopSequence = false; //Reset var
+	return;
+}
+#pragma endregion
+
+//////////////////////////////////BONGOS/////////////////////////////
+#pragma region Bongos
+static constexpr int bongosHash = 0x2347ED83;		//Prop_Bongos_01
+static constexpr char* bongosAnimDict = "amb@world_human_musician@bongos@male@base";
+static constexpr char* bongosBaseAnim = "base";
+static constexpr char* bongosStream = "hash_a38bad80_zvulbdw_collision";
+
+void cBongosSequence::StopAllAnims()
+{
+	if (IS_ENTITY_PLAYING_ANIM(playerPed, bongosAnimDict, bongosBaseAnim, 3))
+		STOP_ANIM_TASK(playerPed, bongosAnimDict, bongosBaseAnim, -2.0f);
+
+	REMOVE_ANIM_DICT(bongosAnimDict);
+	return;
+}
+
+void cBongosSequence::PlaySequence()
+{
+	const int leftHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_L_HAND);
+
+	SetPlayerControls(); //Player control should be disabled here and not during the sequence
+
+	switch (sequenceState)
+	{
+	case INITIALIZED:
+		StopAudioStream();
+		if (LOAD_STREAM(bongosStream, NULL))
+		{
+			PLAY_STREAM_FROM_PED(playerPed);
+			item = CreateObject(bongosHash);
+			SET_ENTITY_AS_MISSION_ENTITY(item, true, true);
+			ATTACH_ENTITY_TO_ENTITY(item, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+			PlayAnim(bongosAnimDict, bongosBaseAnim, upperSecondaryAF | AF_LOOPING);
+			sequenceState = LOOP;
+		}
+		break;
+	case WAITING_FOR_ANIMATION_TO_END:
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
+			sequenceState = nextSequenceState;
+		break;
+	case LOOP:
+		break;
+	case EXITING:
+		StopAllAnims();
+		StopAudioStream();
+		sequenceState = FLUSH_ASSETS;
+		break;
+	case FLUSH_ASSETS:
+		REMOVE_ANIM_DICT(bongosAnimDict);
+		DETACH_ENTITY(item, false, false);
+		SET_ENTITY_AS_NO_LONGER_NEEDED(&item);
+		SET_MODEL_AS_NO_LONGER_NEEDED(bongosHash);
+		shouldStopSequence = false;
+		sequenceState = FINISHED;
+		break;
+	case STREAM_ASSETS_IN:
+		if (RequestModel(bongosHash) && RequestAnimDict(bongosAnimDict))
+		{
+			sequenceState = INITIALIZED;
+			nextSequenceState = NULL;
+			shouldPlayerStandStill = false;
+			lastAnimDict = NULL;
+			lastAnim = NULL;
+			item = NULL;
+		}
+		break;
+	}
+
+	//Disable ped gestures and block non-player peds from reacting to temporary events
+	SetPedMovementAndReactions();
+	return;
+}
+
+void cBongosSequence::SetState(int state)
+{
+	STOP_ANIM_TASK(playerPed, bongosAnimDict, bongosBaseAnim, -2.0f);
+
+	if (state == EXITING && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
+		sequenceState = EXITING;
+	else if (state != EXITING)
+		sequenceState = state;
+
+	return;
+}
+
+void cBongosSequence::UpdateControls()
+{
+	if (sequenceState == EXITING || sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+		return;
+
+	AddScaleformInstructionalButton(control, input, "Hold to stop", true);
+	RunScaleformInstructionalButtons();
+
+	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
+	{
+		controlTimer.Set(0);
+		return;
+	}
+
+	if (controlTimer.Get() > holdTime && IS_DISABLED_CONTROL_PRESSED(control, input))
+		shouldStopSequence = true;
+
+	return;
+}
+
+void cBongosSequence::ForceStop()
+{
+	if (sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+		return;
+
+	StopAllAnims();
+	StopAudioStream();
+	shouldStopSequence = false;
+	sequenceState = FLUSH_ASSETS;
+	PlaySequence();
+	DeleteObject(&item);
+	return;
+}
+
+void cBongosSequence::Update()
 {
 	if (sequenceState != FINISHED)
 	{

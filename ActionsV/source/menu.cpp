@@ -857,6 +857,7 @@ int leafBlowerStatus = -1;
 int jogStatus = -1;
 int clipboardStatus = -1;
 int guitarStatus = -1;
+int bongosStatus = -1;
 void SampleSub()
 {
 	AddTitle("Actions");
@@ -884,6 +885,10 @@ void SampleSub()
 	should = false; shouldNot = false;
 	AddLocal("Guitar", guitarSequence.IsActive(), should, shouldNot, guitarStatus);
 	SequenceOption(should, shouldNot, guitarStatus, guitarSequence);
+
+	should = false; shouldNot = false;
+	AddLocal("Bongos", bongosSequence.IsActive(), should, shouldNot, bongosStatus);
+	SequenceOption(should, shouldNot, bongosStatus, bongosSequence);
 }
 
 void YourSub()

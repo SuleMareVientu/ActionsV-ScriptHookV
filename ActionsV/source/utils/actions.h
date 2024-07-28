@@ -20,6 +20,8 @@ enum eSequenceState
 };
 */
 
+// Sound should always be played from playerPed and never Objects (sound stops in interiors)
+
 class cSequence
 {
 public:
@@ -33,8 +35,9 @@ public:
 
 	void Start();
 	int GetState() const { return sequenceState; }
-	void Stop() { shouldStopSequence = true; return; };
-	bool ShouldStop() const { return shouldStopSequence; };
+	void Stop() { shouldStopSequence = true; return; }
+	bool ShouldStop() const { return shouldStopSequence; }
+	virtual void Update() { return; }
 
 protected:
 	int sequenceState = NULL;
@@ -234,7 +237,39 @@ class cGuitarSequence : public cSequence
 public:
 	void Update();
 
-	cGuitarSequence() { maxStopTimer = 5000; }
+	cGuitarSequence() { maxStopTimer = 3500; }
+
+private:
+	enum SequenceState
+	{
+		FINISHED = SEQUENCE_FINISHED,
+		STREAM_ASSETS_IN = SEQUENCE_STREAM_ASSETS_IN,
+		INITIALIZED = SEQUENCE_INITIALIZED,
+		WAITING_FOR_ANIMATION_TO_END = SEQUENCE_WAITING_FOR_ANIMATION_TO_END,
+		FLUSH_ASSETS = SEQUENCE_FLUSH_ASSETS,
+		LOOP,
+		EXITING,
+	};
+
+	Object item = NULL;
+
+	void StopAllAnims();
+
+	void PlaySequence();
+
+	void SetState(int state);
+
+	void UpdateControls();
+
+	void ForceStop();
+};
+
+class cBongosSequence : public cSequence
+{
+public:
+	void Update();
+
+	cBongosSequence() { maxStopTimer = 3500; }
 
 private:
 	enum SequenceState
@@ -270,3 +305,4 @@ extern cLeafBlowerSequence leafBlowerSequence;
 extern cJogSequence jogSequence;
 extern cClipboardSequence clipboardSequence;
 extern cGuitarSequence guitarSequence;
+extern cBongosSequence bongosSequence;

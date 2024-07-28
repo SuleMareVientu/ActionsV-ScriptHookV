@@ -1,6 +1,8 @@
 #pragma once
 #include <types.h>
 
+#define LOOP(i, n) for(int i = 0; i < n; ++i)
+
 typedef struct { int R, G, B, A; } RGBA;
 
 //Globals
@@ -298,7 +300,8 @@ enum PedFlag {
 
 	//Ped Reset Flags
 	PRF_DisablePlayerJumping = 46,
-	PRF_DisablePlayerVaulting = 47
+	PRF_DisablePlayerVaulting = 47,
+	PRF_DisableSecondaryAnimationTasks = 58
 };
 
 enum AnimationFlag

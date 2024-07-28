@@ -122,6 +122,17 @@ bool RequestAudioBank(char* bank)
 	return true;
 }
 
+bool StopAudioStream()
+{
+	if (IS_STREAM_PLAYING())
+	{
+		STOP_STREAM();
+		return true;
+	}
+
+	return false;
+}
+
 Object CreateObject(Hash model, float locX, float locY, float locZ, float rotX, float rotY, float rotZ)
 {
 	RequestModel(model);
@@ -164,8 +175,14 @@ bool AdditionalChecks(Ped ped, bool countEnemies)
 		IS_PED_GETTING_UP(ped) ||
 		IS_PED_FALLING(ped) ||
 		IS_PED_JUMPING(ped) ||
+		IS_PED_DIVING(ped) ||
+		IS_PED_SWIMMING(ped) ||
+		IS_PED_GOING_INTO_COVER(ped) ||
+		IS_PED_CLIMBING(ped) ||
+		IS_PED_VAULTING(ped) ||
+		IS_PED_HANGING_ON_TO_VEHICLE(ped) ||
+		IS_PED_IN_ANY_VEHICLE(ped, true) ||
 		IS_PED_IN_COVER(ped, false) ||
-		IS_PED_SHOOTING(ped) ||
 		!IS_PED_ON_FOOT(ped) ||
 		IS_PED_TAKING_OFF_HELMET(ped) ||
 		GET_ENTITY_SUBMERGED_LEVEL(ped) >= 0.7f ||

@@ -19,6 +19,7 @@ bool RequestAnimDict(char* animDict);
 bool RequestClipSet(char* animSet);
 bool RequestModel(Hash model);
 bool RequestAudioBank(char* bank);
+bool StopAudioStream();
 Object CreateObject(Hash model, float locX = NULL, float locY = NULL, float locZ = NULL, float rotX = NULL, float rotY = NULL, float rotZ = NULL);
 void DeleteObject(Object* obj);
 void StopPTFX(int* PTFXHandle);
