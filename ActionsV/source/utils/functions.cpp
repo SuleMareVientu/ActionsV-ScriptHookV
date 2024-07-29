@@ -106,12 +106,15 @@ Object CreateObject(Hash model, float locX, float locY, float locZ, float rotX, 
 	return obj;
 }
 
-void DeleteObject(Object* obj)
+void DeleteEntity(Entity* obj)
 {
 	if (DOES_ENTITY_EXIST(*obj))
 	{
-		SET_ENTITY_AS_MISSION_ENTITY(*obj, true, true);
-		DELETE_OBJECT(obj);
+		if (ENTITY::IS_ENTITY_ATTACHED(*obj))
+			ENTITY::DETACH_ENTITY(*obj, false, false);
+
+		SET_ENTITY_AS_MISSION_ENTITY(*obj, false, true);
+		DELETE_ENTITY(obj);
 	}
 	return;
 }
@@ -417,6 +420,17 @@ void AddScaleformInstructionalButton(int iButtonSlotControl, int iButtonSlotInpu
 #pragma endregion
 
 #pragma region Misc
+bool SetAnimSpeed(Entity entity, const char* animDict, const char* animName, float speedMultiplier)
+{
+	if (IS_ENTITY_PLAYING_ANIM(entity, animDict, animName, 3))
+	{
+		SET_ENTITY_ANIM_SPEED(entity, animDict, animName, speedMultiplier);
+		return true;
+	}
+
+	return false;
+}
+
 void PlayAmbientSpeech(Ped ped, char* speechName)
 {
 	AUDIO::SET_AUDIO_FLAG("IsDirectorModeActive", true);

@@ -17,10 +17,12 @@ cBongosSequence bongosSequence;
 cMopSequence mopSequence;
 cMopWithBucketSequence mopWithBucketSequence;
 cCameraSequence cameraSequence;
+cMobileTextSequence mobileTextSequence;
 
-static constexpr int maxSequences = 10;
+static constexpr int maxSequences = 11;
 cSequence* sequences[maxSequences] = { &smokingSequence, &drinkingSequence, &leafBlowerSequence, &jogSequence, &clipboardSequence, 
-									   &guitarSequence, &bongosSequence, &mopSequence, &mopWithBucketSequence, &cameraSequence };
+									   &guitarSequence, &bongosSequence, &mopSequence, &mopWithBucketSequence, &cameraSequence,
+									   &mobileTextSequence };
 
 static constexpr char* CORE_PTFX_ASSET = "core";
 
@@ -209,9 +211,9 @@ void cSmokingSequence::PlaySequence()
 	{
 	case INITIALIZED:
 		item = CreateObject(cigaretteHash);
-		SET_ENTITY_AS_MISSION_ENTITY(item, true, true);
+		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
 		ATTACH_ENTITY_TO_ENTITY(item, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
-		PlayAnimAndWait(smokeEnterAnimDict, smokeEnterAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, LOOP);
+		PlayAnimAndWait(smokeEnterAnimDict, smokeEnterAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, EXITING);
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
 		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
@@ -219,13 +221,13 @@ void cSmokingSequence::PlaySequence()
 		break;
 	case LOOP:
 		if (!IS_ENTITY_PLAYING_ANIM(playerPed, smokeEnterAnimDict, smokeEnterAnim, 3))
-			PlayAnimAndWait(smokeBaseAnimDict, smokeBaseAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, LOOP, 0.388f);
+			PlayAnimAndWait(smokeBaseAnimDict, smokeBaseAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, EXITING, 0.388f);
 		break;
 	case EXITING:
 		PlayAnimAndWait(smokeExitAnimDict, smokeExitAnim, upperSecondaryAF, FLUSH_ASSETS);
 		break;
 	case FLUSH_ASSETS:
-		DeleteObject(&item);
+		DeleteEntity(&item);
 		REMOVE_ANIM_DICT(smokeEnterAnimDict);
 		REMOVE_ANIM_DICT(smokeBaseAnimDict);
 		REMOVE_ANIM_DICT(smokeExitAnimDict);
@@ -283,9 +285,9 @@ void cSmokingSequence::SetState(int state)
 
 	StopAnimTask(playerPed, animDict, anim);
 
-	if (state == EXITING && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
+	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
 		sequenceState = EXITING;
-	else if (state != EXITING)
+	else if (state != EXITING && state != sequenceState)
 		sequenceState = state;
 
 	return;
@@ -327,7 +329,7 @@ void cSmokingSequence::ForceStop()
 
 	StopAllAnims();
 	StopAllPTFX();
-	DeleteObject(&item);
+	DeleteEntity(&item);
 	shouldStopSequence = false;
 	sequenceState = FLUSH_ASSETS;
 	PlaySequence();
@@ -363,7 +365,7 @@ void cSmokingSequence::Update()
 	}
 
 	shouldStopSequence = false; //Reset var
-	DeleteObject(&item); //Force delete old item
+	DeleteEntity(&item); //Force delete old item
 	return;
 }
 #pragma endregion
@@ -395,28 +397,27 @@ void cDrinkingSequence::PlaySequence()
 	{
 	case INITIALIZED:
 		item = CreateObject(beerHash);
-		SET_ENTITY_AS_MISSION_ENTITY(item, true, true);
+		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
 		ATTACH_ENTITY_TO_ENTITY(item, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
-		PlayAnimAndWait(drinkingAnimDict, drinkingEnterAnim, upperSecondaryAF, DRINK, 0.35f, 1.5f, -0.1f);
+		PlayAnimAndWait(drinkingAnimDict, drinkingEnterAnim, upperSecondaryAF, DRINK, 0.35f);
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
 		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 
-		if (IS_ENTITY_PLAYING_ANIM(playerPed, drinkingAnimDict, drinkingEnterAnim, 3))
-			SET_ENTITY_ANIM_SPEED(playerPed, drinkingAnimDict, drinkingEnterAnim, 0.7f);
+		SetAnimSpeed(playerPed, drinkingAnimDict, drinkingEnterAnim, 0.7f);
 		break;
 	case ENTER_DRINK:
 		if (!IS_ENTITY_PLAYING_ANIM(playerPed, drinkingAnimDict, drinkingExitAnim, 3))
-			PlayAnimAndWait(drinkingAnimDict, drinkingEnterAnim, upperSecondaryAF, DRINK, 0.35f, 1.5f, -0.1f);
+			PlayAnimAndWait(drinkingAnimDict, drinkingEnterAnim, upperSecondaryAF, DRINK, 0.35f, WALK_BLEND_IN, -0.5f);
 		break;
 	case DRINK:
 		if (!IS_ENTITY_PLAYING_ANIM(playerPed, drinkingAnimDict, drinkingEnterAnim, 3))
-			PlayAnimAndWait(drinkingAnimDict, drinkingBaseAnim, upperSecondaryAF, HOLD, 0.0f, 0.5f, -0.5f);
+			PlayAnimAndWait(drinkingAnimDict, drinkingBaseAnim, upperSecondaryAF, HOLD, 0.0f, FAST_BLEND_IN, -0.5f);
 		break;
 	case HOLD:
 		if (!IS_ENTITY_PLAYING_ANIM(playerPed, drinkingAnimDict, drinkingBaseAnim, 3))
-			PlayAnimAndWait(drinkingAnimDict, drinkingExitAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, ENTER_DRINK, 0.0f, 0.5f);
+			PlayAnimAndWait(drinkingAnimDict, drinkingExitAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, EXITING);
 		break;
 	case EXITING:
 		StopAllAnims();
@@ -470,9 +471,9 @@ void cDrinkingSequence::SetState(int state)
 
 	StopAnimTask(playerPed, animDict, anim);
 
-	if (state == EXITING && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
+	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
 		sequenceState = EXITING;
-	else if (state != EXITING)
+	else if (state != EXITING && state != sequenceState)
 		sequenceState = state;
 
 	return;
@@ -516,7 +517,7 @@ void cDrinkingSequence::ForceStop()
 	shouldStopSequence = false;
 	sequenceState = FLUSH_ASSETS;
 	PlaySequence();
-	DeleteObject(&item);
+	DeleteEntity(&item);
 	return;
 }
 
@@ -600,7 +601,7 @@ void cLeafBlowerSequence::PlaySequence()
 	{
 	case INITIALIZED:
 		item = CreateObject(leafBlowerHash);
-		SET_ENTITY_AS_MISSION_ENTITY(item, true, true);
+		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
 		ATTACH_ENTITY_TO_ENTITY(item, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 		SET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed, leafBlowerClipSet);
 		TASK_LOOK_AT_ENTITY(playerPed, item, -1, SLF_SLOW_TURN_RATE, 2);
@@ -651,9 +652,9 @@ void cLeafBlowerSequence::PlaySequence()
 
 void cLeafBlowerSequence::SetState(int state)
 {
-	if (state == EXITING && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
+	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
 		sequenceState = EXITING;
-	else if (state != EXITING)
+	else if (state != EXITING && state != sequenceState)
 		sequenceState = state;
 
 	return;
@@ -661,7 +662,7 @@ void cLeafBlowerSequence::SetState(int state)
 
 void cLeafBlowerSequence::UpdateControls()
 {
-	if (sequenceState == EXITING || sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+	if (sequenceState != LOOP)
 		return;
 
 	AddScaleformInstructionalButton(control, input, "Toggle (hold to stop)", true);
@@ -695,7 +696,7 @@ void cLeafBlowerSequence::ForceStop()
 	shouldStopSequence = false;
 	sequenceState = FLUSH_ASSETS;
 	PlaySequence();
-	DeleteObject(&item);
+	DeleteEntity(&item);
 	return;
 }
 
@@ -785,9 +786,9 @@ void cJogSequence::PlaySequence()
 
 void cJogSequence::SetState(int state)
 {
-	if (state == EXITING && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
+	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
 		sequenceState = EXITING;
-	else if (state != EXITING)
+	else if (state != EXITING && state != sequenceState)
 		sequenceState = state;
 
 	return;
@@ -795,7 +796,7 @@ void cJogSequence::SetState(int state)
 
 void cJogSequence::UpdateControls()
 {
-	if (sequenceState == EXITING || sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+	if (sequenceState != LOOP)
 		return;
 
 	AddScaleformInstructionalButton(control, input, "Hold to stop", true);
@@ -874,7 +875,7 @@ void cClipboardSequence::PlaySequence()
 	{
 	case INITIALIZED:
 		item = CreateObject(clipboardHash);
-		SET_ENTITY_AS_MISSION_ENTITY(item, true, true);
+		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
 		ATTACH_ENTITY_TO_ENTITY(item, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 		SET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed, clipboardClipSet);
 		TASK_LOOK_AT_ENTITY(playerPed, item, -1, SLF_SLOW_TURN_RATE, 2);
@@ -919,9 +920,9 @@ void cClipboardSequence::PlaySequence()
 
 void cClipboardSequence::SetState(int state)
 {
-	if (state == EXITING && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
+	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
 		sequenceState = EXITING;
-	else if (state != EXITING)
+	else if (state != EXITING && state != sequenceState)
 		sequenceState = state;
 
 	return;
@@ -929,7 +930,7 @@ void cClipboardSequence::SetState(int state)
 
 void cClipboardSequence::UpdateControls()
 {
-	if (sequenceState == EXITING || sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+	if (sequenceState != LOOP)
 		return;
 
 	AddScaleformInstructionalButton(control, input, "Hold to stop", true);
@@ -957,7 +958,7 @@ void cClipboardSequence::ForceStop()
 	shouldStopSequence = false;
 	sequenceState = FLUSH_ASSETS;
 	PlaySequence();
-	DeleteObject(&item);
+	DeleteEntity(&item);
 	return;
 }
 
@@ -1020,7 +1021,7 @@ void cGuitarSequence::PlaySequence()
 	case INITIALIZED:
 		StopAudioStream();
 		item = CreateObject(guitarHash);
-		SET_ENTITY_AS_MISSION_ENTITY(item, true, true);
+		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
 		ATTACH_ENTITY_TO_ENTITY(item, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 		PlayAnimTask(playerPed, guitarAnimDict, guitarBaseAnim, upperSecondaryAF | AF_LOOPING);
 		sequenceState = LOOP;
@@ -1071,9 +1072,9 @@ void cGuitarSequence::SetState(int state)
 {
 	StopAnimTask(playerPed, guitarAnimDict, guitarBaseAnim);
 
-	if (state == EXITING && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
+	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
 		sequenceState = EXITING;
-	else if (state != EXITING)
+	else if (state != EXITING && state != sequenceState)
 		sequenceState = state;
 
 	return;
@@ -1081,7 +1082,7 @@ void cGuitarSequence::SetState(int state)
 
 void cGuitarSequence::UpdateControls()
 {
-	if (sequenceState == EXITING || sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+	if (sequenceState != LOOP)
 		return;
 
 	AddScaleformInstructionalButton(control, input, "Hold to stop", true);
@@ -1109,7 +1110,7 @@ void cGuitarSequence::ForceStop()
 	shouldStopSequence = false;
 	sequenceState = FLUSH_ASSETS;
 	PlaySequence();
-	DeleteObject(&item);
+	DeleteEntity(&item);
 	return;
 }
 
@@ -1171,7 +1172,7 @@ void cBongosSequence::PlaySequence()
 	case INITIALIZED:
 		StopAudioStream();
 		item = CreateObject(bongosHash);
-		SET_ENTITY_AS_MISSION_ENTITY(item, true, true);
+		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
 		ATTACH_ENTITY_TO_ENTITY(item, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 		PlayAnimTask(playerPed, bongosAnimDict, bongosBaseAnim, upperSecondaryAF | AF_LOOPING);
 		sequenceState = LOOP;
@@ -1222,9 +1223,9 @@ void cBongosSequence::SetState(int state)
 {
 	StopAnimTask(playerPed, bongosAnimDict, bongosBaseAnim);
 
-	if (state == EXITING && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
+	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
 		sequenceState = EXITING;
-	else if (state != EXITING)
+	else if (state != EXITING && state != sequenceState)
 		sequenceState = state;
 
 	return;
@@ -1232,7 +1233,7 @@ void cBongosSequence::SetState(int state)
 
 void cBongosSequence::UpdateControls()
 {
-	if (sequenceState == EXITING || sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+	if (sequenceState != LOOP)
 		return;
 
 	AddScaleformInstructionalButton(control, input, "Hold to stop", true);
@@ -1260,7 +1261,7 @@ void cBongosSequence::ForceStop()
 	shouldStopSequence = false;
 	sequenceState = FLUSH_ASSETS;
 	PlaySequence();
-	DeleteObject(&item);
+	DeleteEntity(&item);
 	return;
 }
 
@@ -1301,6 +1302,8 @@ void cBongosSequence::Update()
 #pragma region Mop
 static constexpr int mopHash = 0xECE03F63;		//Prop_CS_Mop_S
 static constexpr char* mopClipSet = "move_ped_wpn_mop";
+static constexpr char* fibJanitorAnimDict = "missfbi_s4mop";
+static constexpr char* mopIdleAnim = "mop_idle";
 
 void cMopSequence::PlaySequence()
 {
@@ -1312,8 +1315,10 @@ void cMopSequence::PlaySequence()
 	{
 	case INITIALIZED:
 		item = CreateObject(mopHash);
-		SET_ENTITY_AS_MISSION_ENTITY(item, true, true);
+		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
 		ATTACH_ENTITY_TO_ENTITY(item, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+		PLAY_ENTITY_ANIM(item, mopIdleAnim, fibJanitorAnimDict, INSTANT_BLEND_IN, true, false, false, 0.0f, NULL);
+
 		SET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed, mopClipSet);
 		sequenceState = LOOP;
 		break;
@@ -1331,12 +1336,13 @@ void cMopSequence::PlaySequence()
 		DETACH_ENTITY(item, false, false);
 		SET_ENTITY_AS_NO_LONGER_NEEDED(&item);
 		SET_MODEL_AS_NO_LONGER_NEEDED(mopHash);
+		REMOVE_ANIM_DICT(fibJanitorAnimDict);
 		REMOVE_CLIP_SET(mopClipSet);
 		shouldStopSequence = false;
 		sequenceState = FINISHED;
 		break;
 	case STREAM_ASSETS_IN:
-		if (RequestModel(mopHash) && RequestClipSet(mopClipSet))
+		if (RequestModel(mopHash) && RequestClipSet(mopClipSet) && RequestAnimDict(fibJanitorAnimDict))
 		{
 			sequenceState = INITIALIZED;
 			nextSequenceState = NULL;
@@ -1355,9 +1361,9 @@ void cMopSequence::PlaySequence()
 
 void cMopSequence::SetState(int state)
 {
-	if (state == EXITING && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
+	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
 		sequenceState = EXITING;
-	else if (state != EXITING)
+	else if (state != EXITING && state != sequenceState)
 		sequenceState = state;
 
 	return;
@@ -1365,7 +1371,7 @@ void cMopSequence::SetState(int state)
 
 void cMopSequence::UpdateControls()
 {
-	if (sequenceState == EXITING || sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+	if (sequenceState != LOOP)
 		return;
 
 	AddScaleformInstructionalButton(control, input, "Hold to stop", true);
@@ -1392,7 +1398,7 @@ void cMopSequence::ForceStop()
 	shouldStopSequence = false;
 	sequenceState = FLUSH_ASSETS;
 	PlaySequence();
-	DeleteObject(&item);
+	DeleteEntity(&item);
 	return;
 }
 
@@ -1433,8 +1439,6 @@ void cMopSequence::Update()
 #pragma region MopWithBucket
 static constexpr int bucketHash = 0x210974D7;		//Prop_CS_Bucket_S
 static constexpr char* bucketClipSet = "move_ped_wpn_bucket";
-static constexpr char* bucketAnimDict = "missfbi_s4mop";
-static constexpr char* mopIdleAnim = "mop_idle";
 static constexpr char* bucketIdleAnim = "bucket_idle";
 
 void cMopWithBucketSequence::PlaySequence()
@@ -1448,14 +1452,14 @@ void cMopWithBucketSequence::PlaySequence()
 	{
 	case INITIALIZED:
 		bucket = CreateObject(bucketHash);
-		SET_ENTITY_AS_MISSION_ENTITY(bucket, true, true);
+		SET_ENTITY_AS_MISSION_ENTITY(bucket, false, true);
 		ATTACH_ENTITY_TO_ENTITY(bucket, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
-		PLAY_ENTITY_ANIM(bucket, bucketIdleAnim, bucketAnimDict, INSTANT_BLEND_IN, true, false, false, 0.0f, NULL);
+		PLAY_ENTITY_ANIM(bucket, bucketIdleAnim, fibJanitorAnimDict, INSTANT_BLEND_IN, true, false, false, 0.0f, NULL);
 
 		mop = CreateObject(mopHash);
-		SET_ENTITY_AS_MISSION_ENTITY(mop, true, true);
+		SET_ENTITY_AS_MISSION_ENTITY(mop, false, true);
 		ATTACH_ENTITY_TO_ENTITY(mop, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
-		PLAY_ENTITY_ANIM(mop, mopIdleAnim, bucketAnimDict, INSTANT_BLEND_IN, true, false, false, 0.0f, NULL);
+		PLAY_ENTITY_ANIM(mop, mopIdleAnim, fibJanitorAnimDict, INSTANT_BLEND_IN, true, false, false, 0.0f, NULL);
 
 		SET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed, bucketClipSet);
 		sequenceState = LOOP;
@@ -1479,13 +1483,13 @@ void cMopWithBucketSequence::PlaySequence()
 		SET_ENTITY_AS_NO_LONGER_NEEDED(&mop);
 		SET_MODEL_AS_NO_LONGER_NEEDED(mopHash);
 
-		REMOVE_ANIM_DICT(bucketAnimDict);
+		REMOVE_ANIM_DICT(fibJanitorAnimDict);
 		REMOVE_CLIP_SET(bucketClipSet);
 		shouldStopSequence = false;
 		sequenceState = FINISHED;
 		break;
 	case STREAM_ASSETS_IN:
-		if (RequestModel(bucketHash) && RequestModel(mopHash) && RequestAnimDict(bucketAnimDict) && RequestClipSet(bucketClipSet))
+		if (RequestModel(bucketHash) && RequestModel(mopHash) && RequestAnimDict(fibJanitorAnimDict) && RequestClipSet(bucketClipSet))
 		{
 			sequenceState = INITIALIZED;
 			nextSequenceState = NULL;
@@ -1505,9 +1509,9 @@ void cMopWithBucketSequence::PlaySequence()
 
 void cMopWithBucketSequence::SetState(int state)
 {
-	if (state == EXITING && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
+	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
 		sequenceState = EXITING;
-	else if (state != EXITING)
+	else if (state != EXITING && state != sequenceState)
 		sequenceState = state;
 
 	return;
@@ -1515,7 +1519,7 @@ void cMopWithBucketSequence::SetState(int state)
 
 void cMopWithBucketSequence::UpdateControls()
 {
-	if (sequenceState == EXITING || sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+	if (sequenceState != LOOP)
 		return;
 
 	AddScaleformInstructionalButton(control, input, "Hold to stop", true);
@@ -1542,8 +1546,8 @@ void cMopWithBucketSequence::ForceStop()
 	shouldStopSequence = false;
 	sequenceState = FLUSH_ASSETS;
 	PlaySequence();
-	DeleteObject(&bucket);
-	DeleteObject(&mop);
+	DeleteEntity(&bucket);
+	DeleteEntity(&mop);
 	return;
 }
 
@@ -1595,7 +1599,7 @@ void cCameraSequence::PlayPTFXAndSound()
 	if (!RequestPTFXAsset(CORE_PTFX_ASSET))
 		return;
 
-	if (playFlashSound && GET_ENTITY_ANIM_CURRENT_TIME(playerPed, cameraClipSet, cameraActionAnim) > 0.675f)
+	if (playFlashSound && GET_ENTITY_ANIM_CURRENT_TIME(playerPed, cameraClipSet, cameraActionAnim) > 0.5f)
 	{	
 		StartParticleFxNonLoopedOnEntity(CORE_PTFX_ASSET, ANM_PAPARAZZI_FLASH, flashUnit, 1.0f, -0.04f, -0.06f);
 		PLAY_SOUND_FROM_ENTITY(-1, cameraSound, playerPed, NULL, false, 0);
@@ -1610,17 +1614,15 @@ void cCameraSequence::PlaySequence()
 
 	SetPlayerControls(); //Player control should be disabled here and not during the sequence
 
-	PrintFloat(GET_ENTITY_ANIM_CURRENT_TIME(playerPed, cameraClipSet, cameraActionAnim));
-
 	switch (sequenceState)
 	{
 	case INITIALIZED:
 		camera = CreateObject(cameraHash);
-		SET_ENTITY_AS_MISSION_ENTITY(camera, true, true);
+		SET_ENTITY_AS_MISSION_ENTITY(camera, false, true);
 		ATTACH_ENTITY_TO_ENTITY(camera, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 
 		flashUnit = CreateObject(flashUnitHash);
-		SET_ENTITY_AS_MISSION_ENTITY(flashUnit, true, true);
+		SET_ENTITY_AS_MISSION_ENTITY(flashUnit, false, true);
 		ATTACH_ENTITY_TO_ENTITY(flashUnit, camera, NULL, 0.107f, 0.025f, 0.177f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 
 		SET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed, cameraClipSet);
@@ -1629,6 +1631,8 @@ void cCameraSequence::PlaySequence()
 	case WAITING_FOR_ANIMATION_TO_END:
 		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
+
+		SetAnimSpeed(playerPed, cameraClipSet, cameraActionAnim, 2.0f);
 		break;
 	case LOOP:
 		break;
@@ -1682,9 +1686,9 @@ void cCameraSequence::PlaySequence()
 
 void cCameraSequence::SetState(int state)
 {
-	if (state == EXITING && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
+	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
 		sequenceState = EXITING;
-	else if (state != EXITING)
+	else if (state != EXITING && state != sequenceState)
 		sequenceState = state;
 
 	return;
@@ -1692,8 +1696,7 @@ void cCameraSequence::SetState(int state)
 
 void cCameraSequence::UpdateControls()
 {
-	if (sequenceState == WAITING_FOR_ANIMATION_TO_END || sequenceState == TAKE_PHOTO || 
-		sequenceState == EXITING || sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+	if (sequenceState != LOOP)
 		return;
 
 	AddScaleformInstructionalButton(control, input, "Take a picture (hold to stop)", true);
@@ -1725,8 +1728,8 @@ void cCameraSequence::ForceStop()
 	shouldStopSequence = false;
 	sequenceState = FLUSH_ASSETS;
 	PlaySequence();
-	DeleteObject(&camera);
-	DeleteObject(&flashUnit);
+	DeleteEntity(&camera);
+	DeleteEntity(&flashUnit);
 	return;
 }
 
@@ -1759,6 +1762,171 @@ void cCameraSequence::Update()
 	}
 
 	shouldStopSequence = false; //Reset var
+	return;
+}
+#pragma endregion
+
+//////////////////////////////////MOBILE TEXT//////////////////////////////
+#pragma region Mobile Text
+static constexpr int mobileHash = 0x3A1B896A;		//Prop_AMB_Phone
+static constexpr char* mobileBaseAnimDict = "amb@world_human_stand_mobile@male@text@base";
+static constexpr char* mobileBaseAnim = "base";
+
+static constexpr char* mobileEnterAnimDict = "amb@world_human_stand_mobile@male@text@enter";
+static constexpr char* mobileEnterAnim = "enter";
+
+static constexpr char* mobileExitAnimDict = "amb@world_human_stand_mobile@male@text@exit";
+static constexpr char* mobileExitAnim = "exit";
+
+void cMobileTextSequence::StopAllAnims()
+{
+	StopAnimTask(playerPed, mobileEnterAnimDict, mobileEnterAnim);
+	StopAnimTask(playerPed, mobileBaseAnimDict, mobileBaseAnim);
+	StopAnimTask(playerPed, mobileExitAnimDict, mobileExitAnim);
+	REMOVE_ANIM_DICT(mobileEnterAnimDict);
+	REMOVE_ANIM_DICT(mobileBaseAnimDict);
+	REMOVE_ANIM_DICT(mobileExitAnimDict);
+	return;
+}
+
+void cMobileTextSequence::PlaySequence()
+{
+	const int rightHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_R_HAND);
+
+	SetPlayerControls(); //Player control should be disabled here and not during the sequence
+
+	switch (sequenceState)
+	{
+	case INITIALIZED:
+		item = CreateObject(mobileHash);
+		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
+		ATTACH_ENTITY_TO_ENTITY(item, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+		SET_ENTITY_VISIBLE(item, false, false);
+
+		PlayAnimAndWait(mobileEnterAnimDict, mobileEnterAnim, upperSecondaryAF, LOOP, 0.0f, WALK_BLEND_IN, -0.5f);
+		break;
+	case WAITING_FOR_ANIMATION_TO_END:
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
+			sequenceState = nextSequenceState;
+
+		if (GET_ENTITY_ANIM_CURRENT_TIME(playerPed, mobileEnterAnimDict, mobileEnterAnim) > 0.225f)
+			SET_ENTITY_VISIBLE(item, true, false);
+
+		if (GET_ENTITY_ANIM_CURRENT_TIME(playerPed, mobileExitAnimDict, mobileExitAnim) > 0.6f)
+			DeleteEntity(&item);
+		break;
+	case LOOP:
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, mobileBaseAnimDict, mobileBaseAnim, 3))
+			PlayAnimTask(playerPed, mobileBaseAnimDict, mobileBaseAnim, upperSecondaryAF | AF_LOOPING, -1, INSTANT_BLEND_IN, -0.5f);
+		break;
+	case EXITING:
+		PlayAnimAndWait(mobileExitAnimDict, mobileExitAnim, upperSecondaryAF, FLUSH_ASSETS, 0.0f, INSTANT_BLEND_IN);
+		break;
+	case FLUSH_ASSETS:
+		DeleteEntity(&item);
+		SET_MODEL_AS_NO_LONGER_NEEDED(mobileHash);
+		REMOVE_ANIM_DICT(mobileEnterAnimDict);
+		REMOVE_ANIM_DICT(mobileBaseAnimDict);
+		REMOVE_ANIM_DICT(mobileExitAnimDict);
+		shouldStopSequence = false;
+		sequenceState = FINISHED;
+		break;
+	case STREAM_ASSETS_IN:
+		if (RequestModel(mobileHash) && RequestAnimDict(mobileEnterAnimDict) &&
+			RequestAnimDict(mobileBaseAnimDict) && RequestAnimDict(mobileExitAnimDict))
+		{
+			sequenceState = INITIALIZED;
+			nextSequenceState = NULL;
+			shouldPlayerStandStill = false;
+			lastAnimDict = NULL;
+			lastAnim = NULL;
+			item = NULL;
+		}
+		break;
+	}
+
+	//Disable ped gestures and block non-player peds from reacting to temporary events
+	SetPedMovementAndReactions();
+	return;
+}
+
+void cMobileTextSequence::SetState(int state)
+{
+	if (IS_ENTITY_PLAYING_ANIM(playerPed, mobileEnterAnimDict, mobileEnterAnim, 3) ||
+		IS_ENTITY_PLAYING_ANIM(playerPed, mobileExitAnimDict, mobileExitAnim, 3))
+		return;
+
+	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
+		sequenceState = EXITING;
+	else if (state != EXITING && state != sequenceState)
+		sequenceState = state;
+
+	return;
+}
+
+void cMobileTextSequence::UpdateControls()
+{
+	if (sequenceState != LOOP)
+		return;
+
+	AddScaleformInstructionalButton(control, input, "Hold to stop", true);
+	RunScaleformInstructionalButtons();
+
+	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
+	{
+		controlTimer.Set(0);
+		return;
+	}
+
+	if (controlTimer.Get() > holdTime && IS_DISABLED_CONTROL_PRESSED(control, input))
+		shouldStopSequence = true;
+
+	return;
+}
+
+void cMobileTextSequence::ForceStop()
+{
+	if (sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+		return;
+
+	StopAllAnims();
+	DeleteEntity(&item);
+	shouldStopSequence = false;
+	sequenceState = FLUSH_ASSETS;
+	PlaySequence();
+	return;
+}
+
+void cMobileTextSequence::Update()
+{
+	if (sequenceState != FINISHED)
+	{
+		if (!AdditionalChecks(playerPed))
+		{
+			ForceStop();
+			return;
+		}
+
+		PlaySequence();
+		if (shouldStopSequence)
+		{
+			if (stopTimer.Get() > maxStopTimer)
+			{
+				ForceStop();
+				return;
+			}
+
+			SetState(EXITING);
+		}
+		else
+			stopTimer.Set(0);
+
+		UpdateControls();
+		return;
+	}
+
+	shouldStopSequence = false; //Reset var
+	DeleteEntity(&item); //Force delete old item
 	return;
 }
 #pragma endregion

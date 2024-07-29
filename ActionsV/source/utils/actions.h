@@ -62,7 +62,7 @@ protected:
 	Timer controlTimer;
 	short holdTime = 250;
 
-	void PlayAnimAndWait(char *animDict, char *anim, int flag, int nextState, float startPhase = 0.0f, float blendInSpeed = 1.5f, float blendOutSpeed = -1.5f, bool standStill = false, int duration = -1);
+	void PlayAnimAndWait(char *animDict, char *anim, int flag, int nextState, float startPhase = 0.0f, float blendInSpeed = WALK_BLEND_IN, float blendOutSpeed = WALK_BLEND_OUT, bool standStill = false, int duration = -1);
 	void SetPlayerControls();
 	void SetPedMovementAndReactions() const;
 };
@@ -398,6 +398,38 @@ private:
 	void ForceStop();
 };
 
+class cMobileTextSequence : public cSequence
+{
+public:
+	void Update();
+
+	cMobileTextSequence() { maxStopTimer = 10000; }
+
+private:
+	enum SequenceState
+	{
+		FINISHED = SEQUENCE_FINISHED,
+		STREAM_ASSETS_IN = SEQUENCE_STREAM_ASSETS_IN,
+		INITIALIZED = SEQUENCE_INITIALIZED,
+		WAITING_FOR_ANIMATION_TO_END = SEQUENCE_WAITING_FOR_ANIMATION_TO_END,
+		FLUSH_ASSETS = SEQUENCE_FLUSH_ASSETS,
+		LOOP,
+		EXITING
+	};
+
+	Object item = NULL;
+
+	void StopAllAnims();
+
+	void PlaySequence();
+
+	void SetState(int state);
+
+	void UpdateControls();
+
+	void ForceStop();
+};
+
 void UpdateSequences();
 
 // Sequences
@@ -411,3 +443,4 @@ extern cBongosSequence bongosSequence;
 extern cMopSequence mopSequence;
 extern cMopWithBucketSequence mopWithBucketSequence;
 extern cCameraSequence cameraSequence;
+extern cMobileTextSequence mobileTextSequence;

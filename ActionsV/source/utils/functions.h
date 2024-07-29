@@ -21,9 +21,9 @@ void PrintHelp(char* string, bool playSound = false, int overrideDuration = -1);
 
 bool RequestModel(Hash model);
 Object CreateObject(Hash model, float locX = NULL, float locY = NULL, float locZ = NULL, float rotX = NULL, float rotY = NULL, float rotZ = NULL);
-void DeleteObject(Object* obj);
+void DeleteEntity(Entity* obj);
 bool RequestAnimDict(char* animDict);
-bool StopAnimTask(Entity entity, const char* animDict, const char* animName, float blendDelta = NORMAL_BLEND_OUT);
+bool StopAnimTask(Entity entity, const char* animDict, const char* animName, float blendDelta = REALLY_SLOW_BLEND_OUT);
 bool RequestClipSet(char* animSet);
 bool RequestAudioBank(char* bank);
 bool StopAudioStream();
@@ -41,10 +41,11 @@ void DisablePlayerControlThisFrame();
 void RunScaleformInstructionalButtons(bool refresh = true);
 void AddScaleformInstructionalButton(int iButtonSlotControl, int iButtonSlotInput, char* sText, bool reset = false);
 
+bool SetAnimSpeed(Entity entity, const char* animDict, const char* animName, float speedMultiplier);
 void PlayAmbientSpeech(Ped ped, char* speechName);
 
 #pragma region Inline
-inline void PlayAnimTask(Ped ped, const char* animDictionary, const char* animationName, int flag = AF_DEFAULT, int duration = -1, float blendInSpeed = NORMAL_BLEND_IN, float blendOutSpeed = NORMAL_BLEND_OUT, float playbackRate = 0.0f, bool lockX = false, bool lockY = false, bool lockZ = false)
+inline void PlayAnimTask(Ped ped, const char* animDictionary, const char* animationName, int flag = AF_DEFAULT, int duration = -1, float blendInSpeed = WALK_BLEND_IN, float blendOutSpeed = WALK_BLEND_OUT, float playbackRate = 0.0f, bool lockX = false, bool lockY = false, bool lockZ = false)
 {
 	TASK_PLAY_ANIM(ped, animDictionary, animationName, blendInSpeed, blendOutSpeed, duration, flag, playbackRate, lockX, lockY, lockZ);
 }

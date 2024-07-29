@@ -861,6 +861,7 @@ int bongosStatus = -1;
 int mopSatus = -1;
 int mopWithBucketStatus = -1;
 int cameraStatus = -1;
+int mobileTextStatus = -1;
 void SampleSub()
 {
 	AddTitle("Actions");
@@ -904,6 +905,10 @@ void SampleSub()
 	should = false; shouldNot = false;
 	AddLocal("Camera", cameraSequence.IsActive(), should, shouldNot, cameraStatus);
 	SequenceOption(should, shouldNot, cameraStatus, cameraSequence);
+
+	should = false; shouldNot = false;
+	AddLocal("Mobile", mobileTextSequence.IsActive(), should, shouldNot, mobileTextStatus);
+	SequenceOption(should, shouldNot, mobileTextStatus, mobileTextSequence);
 }
 
 void YourSub()
