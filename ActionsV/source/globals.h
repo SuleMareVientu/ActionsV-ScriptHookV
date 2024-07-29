@@ -309,6 +309,9 @@ enum PedBoneTag {
 
 enum PedFlag {
 	//Ped Config Flags
+	PCF_PhoneDisableTextingAnimations = 242,
+	PCF_PhoneDisableTalkingAnimations = 243,
+	PCF_PhoneDisableCameraAnimations = 244,
 	PCF_DisableShockingEvents = 294,
 	PCF_DisableTalkTo = 329,
 

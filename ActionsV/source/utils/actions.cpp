@@ -111,6 +111,9 @@ void cSequence::SetPedMovementAndReactions() const
 {
 	if (sequenceState == SEQUENCE_FLUSH_ASSETS || sequenceState == SEQUENCE_FINISHED)
 	{
+		DisablePedConfigFlag(playerPed, PCF_PhoneDisableTextingAnimations);
+		DisablePedConfigFlag(playerPed, PCF_PhoneDisableTalkingAnimations);
+		DisablePedConfigFlag(playerPed, PCF_PhoneDisableCameraAnimations);
 		SET_PED_CAN_PLAY_GESTURE_ANIMS(playerPed, true);
 		SET_PED_CAN_PLAY_AMBIENT_ANIMS(playerPed, true);
 		SET_PED_CAN_PLAY_AMBIENT_BASE_ANIMS(playerPed, true);
@@ -121,6 +124,9 @@ void cSequence::SetPedMovementAndReactions() const
 	else
 	{
 		EnablePedResetFlag(playerPed, PRF_DisableSecondaryAnimationTasks);
+		EnablePedConfigFlag(playerPed, PCF_PhoneDisableTextingAnimations);
+		EnablePedConfigFlag(playerPed, PCF_PhoneDisableTalkingAnimations);
+		EnablePedConfigFlag(playerPed, PCF_PhoneDisableCameraAnimations);
 		SET_PED_CAN_PLAY_GESTURE_ANIMS(playerPed, false);
 		SET_PED_CAN_PLAY_AMBIENT_ANIMS(playerPed, false);
 		SET_PED_CAN_PLAY_AMBIENT_BASE_ANIMS(playerPed, false);
