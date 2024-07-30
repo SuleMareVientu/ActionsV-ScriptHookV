@@ -18,11 +18,12 @@ cMopSequence mopSequence;
 cMopWithBucketSequence mopWithBucketSequence;
 cCameraSequence cameraSequence;
 cMobileTextSequence mobileTextSequence;
+cShineTorchSequence shineTorchSequence;
 
-static constexpr int maxSequences = 11;
+static constexpr int maxSequences = 12;
 cSequence* sequences[maxSequences] = { &smokingSequence, &drinkingSequence, &leafBlowerSequence, &jogSequence, &clipboardSequence, 
 									   &guitarSequence, &bongosSequence, &mopSequence, &mopWithBucketSequence, &cameraSequence,
-									   &mobileTextSequence };
+									   &mobileTextSequence, &shineTorchSequence };
 
 static constexpr char* CORE_PTFX_ASSET = "core";
 
@@ -140,7 +141,7 @@ void cSequence::SetPedMovementAndReactions() const
 
 //////////////////////////////////SMOKING//////////////////////////////
 #pragma region Smoking
-static constexpr int cigaretteHash = 0x783A4BE3;		//Prop_AMB_Ciggy_01
+static constexpr int cigaretteHash = 0xC94C4B4C;		//Prop_CS_Ciggy_01					Prop_AMB_Ciggy_01
 static constexpr char* smokeBaseAnimDict = "amb@world_human_smoking@male@male_a@base";
 static constexpr char* smokeBaseAnim = "base";
 
@@ -1904,6 +1905,175 @@ void cMobileTextSequence::ForceStop()
 }
 
 void cMobileTextSequence::Update()
+{
+	if (sequenceState != FINISHED)
+	{
+		if (!AdditionalChecks(playerPed))
+		{
+			ForceStop();
+			return;
+		}
+
+		PlaySequence();
+		if (shouldStopSequence)
+		{
+			if (stopTimer.Get() > maxStopTimer)
+			{
+				ForceStop();
+				return;
+			}
+
+			SetState(EXITING);
+		}
+		else
+			stopTimer.Set(0);
+
+		UpdateControls();
+		return;
+	}
+
+	shouldStopSequence = false; //Reset var
+	DeleteEntity(&item); //Force delete old item
+	return;
+}
+#pragma endregion
+
+//////////////////////////////////SHINE TORCH//////////////////////////////
+#pragma region Shine Torch
+static constexpr int torchHash = 0xC9F33B0;		//Prop_CS_Police_Torch_02							Prop_CS_Police_Torch
+static constexpr char* torchBaseAnimDict = "amb@world_human_security_shine_torch@male@base";
+static constexpr char* torchBaseAnim = "base";
+
+static constexpr char* torchEnterAnimDict = "amb@world_human_security_shine_torch@male@enter";
+static constexpr char* torchEnterAnim = "enter";
+
+static constexpr char* torchExitAnimDict = "amb@world_human_security_shine_torch@male@exit";
+static constexpr char* torchExitAnim = "exit";
+
+void cShineTorchSequence::StopAllAnims()
+{
+	StopAnimTask(playerPed, torchEnterAnimDict, torchEnterAnim);
+	StopAnimTask(playerPed, torchBaseAnimDict, torchBaseAnim);
+	StopAnimTask(playerPed, torchExitAnimDict, torchExitAnim);
+	REMOVE_ANIM_DICT(torchEnterAnimDict);
+	REMOVE_ANIM_DICT(torchBaseAnimDict);
+	REMOVE_ANIM_DICT(torchExitAnimDict);
+	return;
+}
+
+void cShineTorchSequence::PlaySequence()
+{
+	const int leftHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_L_HAND);
+
+	SetPlayerControls(); //Player control should be disabled here and not during the sequence
+
+	switch (sequenceState)
+	{
+	case INITIALIZED:
+		item = CreateObject(torchHash);
+		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
+		ATTACH_ENTITY_TO_ENTITY(item, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 90.0f, true, true, false, false, 2, true);
+		SET_ENTITY_VISIBLE(item, false, false);
+
+		PlayAnimAndWait(torchEnterAnimDict, torchEnterAnim, upperSecondaryAF, LOOP, 0.0f, WALK_BLEND_IN, -0.5f);
+		break;
+	case WAITING_FOR_ANIMATION_TO_END:
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
+			sequenceState = nextSequenceState;
+
+		if (GET_ENTITY_ANIM_CURRENT_TIME(playerPed, torchEnterAnimDict, torchEnterAnim) > 0.35f)
+			SET_ENTITY_VISIBLE(item, true, false);
+
+		if (GET_ENTITY_ANIM_CURRENT_TIME(playerPed, torchExitAnimDict, torchExitAnim) > 0.55f)
+			DeleteEntity(&item);
+		break;
+	case LOOP:
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, torchBaseAnimDict, torchBaseAnim, 3))
+			PlayAnimTask(playerPed, torchBaseAnimDict, torchBaseAnim, upperSecondaryAF | AF_LOOPING, -1, INSTANT_BLEND_IN, -0.5f);
+
+		Vector3 loc = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(item, 0.0f, -0.21f, 0.0f);
+		Vector3 dir = GET_ENTITY_FORWARD_VECTOR(item); dir.x *= -1.0f; dir.y *= -1.0f; dir.z *= -1.0f;
+		DRAW_SHADOWED_SPOT_LIGHT(loc.x, loc.y, loc.z, dir.x, dir.y, dir.z, 255, 255, 255, 7.5f, 0.25f, 20.0f, 25.0f, 7.5f, 0);
+		break;
+	case EXITING:
+		PlayAnimAndWait(torchExitAnimDict, torchExitAnim, upperSecondaryAF, FLUSH_ASSETS, 0.0f, INSTANT_BLEND_IN);
+		break;
+	case FLUSH_ASSETS:
+		DeleteEntity(&item);
+		SET_MODEL_AS_NO_LONGER_NEEDED(torchHash);
+		REMOVE_ANIM_DICT(torchEnterAnimDict);
+		REMOVE_ANIM_DICT(torchBaseAnimDict);
+		REMOVE_ANIM_DICT(torchExitAnimDict);
+		shouldStopSequence = false;
+		sequenceState = FINISHED;
+		break;
+	case STREAM_ASSETS_IN:
+		if (RequestModel(torchHash) && RequestAnimDict(torchEnterAnimDict) &&
+			RequestAnimDict(torchBaseAnimDict) && RequestAnimDict(torchExitAnimDict))
+		{
+			sequenceState = INITIALIZED;
+			nextSequenceState = NULL;
+			shouldPlayerStandStill = false;
+			lastAnimDict = NULL;
+			lastAnim = NULL;
+			item = NULL;
+		}
+		break;
+	}
+
+	//Disable ped gestures and block non-player peds from reacting to temporary events
+	SetPedMovementAndReactions();
+	return;
+}
+
+void cShineTorchSequence::SetState(int state)
+{
+	if (IS_ENTITY_PLAYING_ANIM(playerPed, torchEnterAnimDict, torchEnterAnim, 3) ||
+		IS_ENTITY_PLAYING_ANIM(playerPed, torchExitAnimDict, torchExitAnim, 3))
+		return;
+
+	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
+		sequenceState = EXITING;
+	else if (state != EXITING && state != sequenceState)
+		sequenceState = state;
+
+	return;
+}
+
+void cShineTorchSequence::UpdateControls()
+{
+	if (sequenceState != LOOP)
+		return;
+
+	AddScaleformInstructionalButton(control, input, "Hold to stop", true);
+	RunScaleformInstructionalButtons();
+
+	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
+	{
+		controlTimer.Set(0);
+		return;
+	}
+
+	if (controlTimer.Get() > holdTime && IS_DISABLED_CONTROL_PRESSED(control, input))
+		shouldStopSequence = true;
+
+	return;
+}
+
+void cShineTorchSequence::ForceStop()
+{
+	if (sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+		return;
+
+	StopAllAnims();
+	DeleteEntity(&item);
+	shouldStopSequence = false;
+	sequenceState = FLUSH_ASSETS;
+	PlaySequence();
+	return;
+}
+
+void cShineTorchSequence::Update()
 {
 	if (sequenceState != FINISHED)
 	{

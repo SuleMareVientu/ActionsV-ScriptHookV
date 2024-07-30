@@ -430,6 +430,38 @@ private:
 	void ForceStop();
 };
 
+class cShineTorchSequence : public cSequence
+{
+public:
+	void Update();
+
+	cShineTorchSequence() { maxStopTimer = 10000; }
+
+private:
+	enum SequenceState
+	{
+		FINISHED = SEQUENCE_FINISHED,
+		STREAM_ASSETS_IN = SEQUENCE_STREAM_ASSETS_IN,
+		INITIALIZED = SEQUENCE_INITIALIZED,
+		WAITING_FOR_ANIMATION_TO_END = SEQUENCE_WAITING_FOR_ANIMATION_TO_END,
+		FLUSH_ASSETS = SEQUENCE_FLUSH_ASSETS,
+		LOOP,
+		EXITING
+	};
+
+	Object item = NULL;
+
+	void StopAllAnims();
+
+	void PlaySequence();
+
+	void SetState(int state);
+
+	void UpdateControls();
+
+	void ForceStop();
+};
+
 void UpdateSequences();
 
 // Sequences
@@ -444,3 +476,4 @@ extern cMopSequence mopSequence;
 extern cMopWithBucketSequence mopWithBucketSequence;
 extern cCameraSequence cameraSequence;
 extern cMobileTextSequence mobileTextSequence;
+extern cShineTorchSequence shineTorchSequence;

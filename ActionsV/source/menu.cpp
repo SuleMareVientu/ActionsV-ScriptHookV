@@ -882,6 +882,7 @@ int mopSatus = -1;
 int mopWithBucketStatus = -1;
 int cameraStatus = -1;
 int mobileTextStatus = -1;
+int shineTorchStatus = -1;
 void SampleSub()
 {
 	AddTitle("Actions");
@@ -929,6 +930,10 @@ void SampleSub()
 	should = false; shouldNot = false;
 	AddLocal("Mobile", mobileTextSequence.IsActive(), should, shouldNot, mobileTextStatus);
 	SequenceOption(should, shouldNot, mobileTextStatus, mobileTextSequence);
+
+	should = false; shouldNot = false;
+	AddLocal("Torch", shineTorchSequence.IsActive(), should, shouldNot, shineTorchStatus);
+	SequenceOption(should, shouldNot, shineTorchStatus, shineTorchSequence);
 }
 
 void YourSub()

@@ -99,7 +99,7 @@ bool RequestModel(Hash model)
 
 Object CreateObject(Hash model, float locX, float locY, float locZ, float rotX, float rotY, float rotZ)
 {
-	Object obj = CREATE_OBJECT_NO_OFFSET(model, locX, locY, locZ, false, false, false);
+	Object obj = CREATE_OBJECT_NO_OFFSET(model, locX, locY, locZ, false, true, false);
 	if (rotX != NULL || rotY != NULL || rotZ != NULL)
 		SET_ENTITY_ROTATION(obj, rotX, rotY, rotZ, 2, false);
 
