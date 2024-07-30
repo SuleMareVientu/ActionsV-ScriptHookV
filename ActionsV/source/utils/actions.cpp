@@ -19,11 +19,12 @@ cMopWithBucketSequence mopWithBucketSequence;
 cCameraSequence cameraSequence;
 cMobileTextSequence mobileTextSequence;
 cShineTorchSequence shineTorchSequence;
+cLiftCurlBarSequence liftCurlBarSequence;
 
-static constexpr int maxSequences = 12;
+static constexpr int maxSequences = 13;
 cSequence* sequences[maxSequences] = { &smokingSequence, &drinkingSequence, &leafBlowerSequence, &jogSequence, &clipboardSequence, 
 									   &guitarSequence, &bongosSequence, &mopSequence, &mopWithBucketSequence, &cameraSequence,
-									   &mobileTextSequence, &shineTorchSequence };
+									   &mobileTextSequence, &shineTorchSequence, &liftCurlBarSequence };
 
 static constexpr char* CORE_PTFX_ASSET = "core";
 
@@ -73,7 +74,7 @@ void cSequence::Start()
 
 void cSequence::PlayAnimAndWait(char *animDict, char *anim, int flag, int nextState, float startPhase, float blendInSpeed, float blendOutSpeed, bool standStill, int duration)
 {
-	PlayAnimTask(playerPed, animDict, anim, flag, duration, blendInSpeed, blendOutSpeed, startPhase);
+	PlayAnimTask(playerPed, animDict, anim, flag, startPhase, blendInSpeed, blendOutSpeed, duration);
 	sequenceState = SEQUENCE_WAITING_FOR_ANIMATION_TO_END;
 	nextSequenceState = nextState;
 	shouldPlayerStandStill = standStill;
@@ -220,15 +221,21 @@ void cSmokingSequence::PlaySequence()
 		item = CreateObject(cigaretteHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
 		ATTACH_ENTITY_TO_ENTITY(item, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
-		PlayAnimAndWait(smokeEnterAnimDict, smokeEnterAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, EXITING);
+		PlayAnimTask(playerPed, smokeEnterAnimDict, smokeEnterAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME);
+		sequenceState = ENTER_SMOKE;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 		break;
-	case LOOP:
+	case ENTER_SMOKE:
 		if (!IS_ENTITY_PLAYING_ANIM(playerPed, smokeEnterAnimDict, smokeEnterAnim, 3))
-			PlayAnimAndWait(smokeBaseAnimDict, smokeBaseAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, EXITING, 0.388f);
+			PlayAnimTask(playerPed, smokeEnterAnimDict, smokeEnterAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME);
+		break;
+	case SMOKE:
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, smokeBaseAnimDict, smokeBaseAnim, 3))
+			PlayAnimTask(playerPed, smokeBaseAnimDict, smokeBaseAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, 0.388f);
 		break;
 	case EXITING:
 		PlayAnimAndWait(smokeExitAnimDict, smokeExitAnim, upperSecondaryAF, FLUSH_ASSETS);
@@ -266,14 +273,12 @@ void cSmokingSequence::PlaySequence()
 
 bool cSmokingSequence::GetAnimHold(char** animDict, char** anim)
 {
-	if (IS_ENTITY_PLAYING_ANIM(playerPed, smokeEnterAnimDict, smokeEnterAnim, 3) &&
-		GET_ENTITY_ANIM_CURRENT_TIME(playerPed, smokeEnterAnimDict, smokeEnterAnim) == 1.0f)
+	if (HAS_ENTITY_ANIM_FINISHED(playerPed, smokeEnterAnimDict, smokeEnterAnim, 3))
 	{
 		*animDict = smokeEnterAnimDict;
 		*anim = smokeEnterAnim;
 	}
-	else if (IS_ENTITY_PLAYING_ANIM(playerPed, smokeBaseAnimDict, smokeBaseAnim, 3) &&
-		GET_ENTITY_ANIM_CURRENT_TIME(playerPed, smokeBaseAnimDict, smokeBaseAnim) == 1.0f)
+	else if (HAS_ENTITY_ANIM_FINISHED(playerPed, smokeBaseAnimDict, smokeBaseAnim, 3))
 	{
 		*animDict = smokeBaseAnimDict;
 		*anim = smokeBaseAnim;
@@ -309,8 +314,11 @@ void cSmokingSequence::UpdateControls()
 	if (!GetAnimHold(&animDict, &anim))
 		return;
 
-	AddScaleformInstructionalButton(control, input, "Smoke (hold to stop)", true);
-	RunScaleformInstructionalButtons();
+	if (instructionalButtonsText != NULL)
+	{
+		AddScaleformInstructionalButton(control, input, instructionalButtonsText, true);
+		RunScaleformInstructionalButtons();
+	}
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
@@ -321,7 +329,7 @@ void cSmokingSequence::UpdateControls()
 	if (controlTimer.Get() < holdTime)
 	{
 		if (IS_DISABLED_CONTROL_JUST_RELEASED(control, input))
-			SetState(LOOP);
+			SetState(SMOKE);
 	}
 	else if (IS_DISABLED_CONTROL_PRESSED(control, input))
 		shouldStopSequence = true;
@@ -406,25 +414,24 @@ void cDrinkingSequence::PlaySequence()
 		item = CreateObject(beerHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
 		ATTACH_ENTITY_TO_ENTITY(item, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
-		PlayAnimAndWait(drinkingAnimDict, drinkingEnterAnim, upperSecondaryAF, DRINK, 0.35f);
+		PlayAnimAndWait(drinkingAnimDict, drinkingEnterAnim, upperSecondaryAF, DRINK, 0.35f, WALK_BLEND_IN, SLOWEST_BLEND_OUT);
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 
 		SetAnimSpeed(playerPed, drinkingAnimDict, drinkingEnterAnim, 0.7f);
 		break;
 	case ENTER_DRINK:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, drinkingAnimDict, drinkingExitAnim, 3))
-			PlayAnimAndWait(drinkingAnimDict, drinkingEnterAnim, upperSecondaryAF, DRINK, 0.35f, WALK_BLEND_IN, -0.5f);
+		PlayAnimAndWait(drinkingAnimDict, drinkingEnterAnim, upperSecondaryAF, DRINK, 0.35f, WALK_BLEND_IN, SLOWEST_BLEND_OUT);
 		break;
 	case DRINK:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, drinkingAnimDict, drinkingEnterAnim, 3))
-			PlayAnimAndWait(drinkingAnimDict, drinkingBaseAnim, upperSecondaryAF, HOLD, 0.0f, FAST_BLEND_IN, -0.5f);
+		PlayAnimAndWait(drinkingAnimDict, drinkingBaseAnim, upperSecondaryAF, HOLD, 0.0f, FAST_BLEND_IN, SLOWEST_BLEND_OUT);
 		break;
 	case HOLD:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, drinkingAnimDict, drinkingBaseAnim, 3))
-			PlayAnimAndWait(drinkingAnimDict, drinkingExitAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, EXITING);
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, drinkingAnimDict, drinkingExitAnim, 3))
+			PlayAnimTask(playerPed, drinkingAnimDict, drinkingExitAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME);
 		break;
 	case EXITING:
 		StopAllAnims();
@@ -458,8 +465,7 @@ void cDrinkingSequence::PlaySequence()
 
 bool cDrinkingSequence::GetAnimHold(char** animDict, char** anim)
 {
-	if (IS_ENTITY_PLAYING_ANIM(playerPed, drinkingAnimDict, drinkingExitAnim, 3) &&
-		GET_ENTITY_ANIM_CURRENT_TIME(playerPed, drinkingAnimDict, drinkingExitAnim) == 1.0f)
+	if (HAS_ENTITY_ANIM_FINISHED(playerPed, drinkingAnimDict, drinkingExitAnim, 3))
 	{
 		*animDict = drinkingAnimDict;
 		*anim = drinkingExitAnim;
@@ -475,8 +481,6 @@ void cDrinkingSequence::SetState(int state)
 	char* animDict = ""; char* anim = "";
 	if (!GetAnimHold(&animDict, &anim))
 		return;
-
-	StopAnimTask(playerPed, animDict, anim);
 
 	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
 		sequenceState = EXITING;
@@ -495,8 +499,11 @@ void cDrinkingSequence::UpdateControls()
 	if (!GetAnimHold(&animDict, &anim))
 		return;
 
-	AddScaleformInstructionalButton(control, input, "Drink (hold to stop)", true);
-	RunScaleformInstructionalButtons();
+	if (instructionalButtonsText != NULL)
+	{
+		AddScaleformInstructionalButton(control, input, instructionalButtonsText, true);
+		RunScaleformInstructionalButtons();
+	}
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
@@ -615,7 +622,8 @@ void cLeafBlowerSequence::PlaySequence()
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 		break;
 	case LOOP:
@@ -672,8 +680,11 @@ void cLeafBlowerSequence::UpdateControls()
 	if (sequenceState != LOOP)
 		return;
 
-	AddScaleformInstructionalButton(control, input, "Toggle (hold to stop)", true);
-	RunScaleformInstructionalButtons();
+	if (instructionalButtonsText != NULL)
+	{
+		AddScaleformInstructionalButton(control, input, instructionalButtonsText, true);
+		RunScaleformInstructionalButtons();
+	}
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
@@ -759,7 +770,8 @@ void cJogSequence::PlaySequence()
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 		break;
 	case LOOP:
@@ -806,8 +818,11 @@ void cJogSequence::UpdateControls()
 	if (sequenceState != LOOP)
 		return;
 
-	AddScaleformInstructionalButton(control, input, "Hold to stop", true);
-	RunScaleformInstructionalButtons();
+	if (instructionalButtonsText != NULL)
+	{
+		AddScaleformInstructionalButton(control, input, instructionalButtonsText, true);
+		RunScaleformInstructionalButtons();
+	}
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
@@ -889,7 +904,8 @@ void cClipboardSequence::PlaySequence()
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 		break;
 	case LOOP:
@@ -940,8 +956,11 @@ void cClipboardSequence::UpdateControls()
 	if (sequenceState != LOOP)
 		return;
 
-	AddScaleformInstructionalButton(control, input, "Hold to stop", true);
-	RunScaleformInstructionalButtons();
+	if (instructionalButtonsText != NULL)
+	{
+		AddScaleformInstructionalButton(control, input, instructionalButtonsText, true);
+		RunScaleformInstructionalButtons();
+	}
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
@@ -1034,7 +1053,8 @@ void cGuitarSequence::PlaySequence()
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 		break;
 	case LOOP:
@@ -1092,8 +1112,11 @@ void cGuitarSequence::UpdateControls()
 	if (sequenceState != LOOP)
 		return;
 
-	AddScaleformInstructionalButton(control, input, "Hold to stop", true);
-	RunScaleformInstructionalButtons();
+	if (instructionalButtonsText != NULL)
+	{
+		AddScaleformInstructionalButton(control, input, instructionalButtonsText, true);
+		RunScaleformInstructionalButtons();
+	}
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
@@ -1185,7 +1208,8 @@ void cBongosSequence::PlaySequence()
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 		break;
 	case LOOP:
@@ -1243,8 +1267,11 @@ void cBongosSequence::UpdateControls()
 	if (sequenceState != LOOP)
 		return;
 
-	AddScaleformInstructionalButton(control, input, "Hold to stop", true);
-	RunScaleformInstructionalButtons();
+	if (instructionalButtonsText != NULL)
+	{
+		AddScaleformInstructionalButton(control, input, instructionalButtonsText, true);
+		RunScaleformInstructionalButtons();
+	}
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
@@ -1330,7 +1357,8 @@ void cMopSequence::PlaySequence()
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 		break;
 	case LOOP:
@@ -1381,8 +1409,11 @@ void cMopSequence::UpdateControls()
 	if (sequenceState != LOOP)
 		return;
 
-	AddScaleformInstructionalButton(control, input, "Hold to stop", true);
-	RunScaleformInstructionalButtons();
+	if (instructionalButtonsText != NULL)
+	{
+		AddScaleformInstructionalButton(control, input, instructionalButtonsText, true);
+		RunScaleformInstructionalButtons();
+	}
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
@@ -1472,7 +1503,8 @@ void cMopWithBucketSequence::PlaySequence()
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 		break;
 	case LOOP:
@@ -1529,8 +1561,11 @@ void cMopWithBucketSequence::UpdateControls()
 	if (sequenceState != LOOP)
 		return;
 
-	AddScaleformInstructionalButton(control, input, "Hold to stop", true);
-	RunScaleformInstructionalButtons();
+	if (instructionalButtonsText != NULL)
+	{
+		AddScaleformInstructionalButton(control, input, instructionalButtonsText, true);
+		RunScaleformInstructionalButtons();
+	}
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
@@ -1636,7 +1671,8 @@ void cCameraSequence::PlaySequence()
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 
 		SetAnimSpeed(playerPed, cameraClipSet, cameraActionAnim, 2.0f);
@@ -1706,8 +1742,11 @@ void cCameraSequence::UpdateControls()
 	if (sequenceState != LOOP)
 		return;
 
-	AddScaleformInstructionalButton(control, input, "Take a picture (hold to stop)", true);
-	RunScaleformInstructionalButtons();
+	if (instructionalButtonsText != NULL)
+	{
+		AddScaleformInstructionalButton(control, input, instructionalButtonsText, true);
+		RunScaleformInstructionalButtons();
+	}
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
@@ -1810,10 +1849,11 @@ void cMobileTextSequence::PlaySequence()
 		ATTACH_ENTITY_TO_ENTITY(item, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 		SET_ENTITY_VISIBLE(item, false, false);
 
-		PlayAnimAndWait(mobileEnterAnimDict, mobileEnterAnim, upperSecondaryAF, LOOP, 0.0f, WALK_BLEND_IN, -0.5f);
+		PlayAnimAndWait(mobileEnterAnimDict, mobileEnterAnim, upperSecondaryAF, LOOP, 0.0f, WALK_BLEND_IN, SLOWEST_BLEND_OUT);
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 
 		if (GET_ENTITY_ANIM_CURRENT_TIME(playerPed, mobileEnterAnimDict, mobileEnterAnim) > 0.225f)
@@ -1824,7 +1864,7 @@ void cMobileTextSequence::PlaySequence()
 		break;
 	case LOOP:
 		if (!IS_ENTITY_PLAYING_ANIM(playerPed, mobileBaseAnimDict, mobileBaseAnim, 3))
-			PlayAnimTask(playerPed, mobileBaseAnimDict, mobileBaseAnim, upperSecondaryAF | AF_LOOPING, -1, INSTANT_BLEND_IN, -0.5f);
+			PlayAnimTask(playerPed, mobileBaseAnimDict, mobileBaseAnim, upperSecondaryAF | AF_LOOPING, 0.0f, INSTANT_BLEND_IN, SLOWEST_BLEND_OUT);
 		break;
 	case EXITING:
 		PlayAnimAndWait(mobileExitAnimDict, mobileExitAnim, upperSecondaryAF, FLUSH_ASSETS, 0.0f, INSTANT_BLEND_IN);
@@ -1876,8 +1916,11 @@ void cMobileTextSequence::UpdateControls()
 	if (sequenceState != LOOP)
 		return;
 
-	AddScaleformInstructionalButton(control, input, "Hold to stop", true);
-	RunScaleformInstructionalButtons();
+	if (instructionalButtonsText != NULL)
+	{
+		AddScaleformInstructionalButton(control, input, instructionalButtonsText, true);
+		RunScaleformInstructionalButtons();
+	}
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
@@ -1975,10 +2018,11 @@ void cShineTorchSequence::PlaySequence()
 		ATTACH_ENTITY_TO_ENTITY(item, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 90.0f, true, true, false, false, 2, true);
 		SET_ENTITY_VISIBLE(item, false, false);
 
-		PlayAnimAndWait(torchEnterAnimDict, torchEnterAnim, upperSecondaryAF, LOOP, 0.0f, WALK_BLEND_IN, -0.5f);
+		PlayAnimAndWait(torchEnterAnimDict, torchEnterAnim, upperSecondaryAF, LOOP, 0.0f, WALK_BLEND_IN, SLOWEST_BLEND_OUT);
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 
 		if (GET_ENTITY_ANIM_CURRENT_TIME(playerPed, torchEnterAnimDict, torchEnterAnim) > 0.35f)
@@ -1989,7 +2033,7 @@ void cShineTorchSequence::PlaySequence()
 		break;
 	case LOOP:
 		if (!IS_ENTITY_PLAYING_ANIM(playerPed, torchBaseAnimDict, torchBaseAnim, 3))
-			PlayAnimTask(playerPed, torchBaseAnimDict, torchBaseAnim, upperSecondaryAF | AF_LOOPING, -1, INSTANT_BLEND_IN, -0.5f);
+			PlayAnimTask(playerPed, torchBaseAnimDict, torchBaseAnim, upperSecondaryAF | AF_LOOPING, 0.0f, INSTANT_BLEND_IN, SLOWEST_BLEND_OUT);
 
 		Vector3 loc = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(item, 0.0f, -0.21f, 0.0f);
 		Vector3 dir = GET_ENTITY_FORWARD_VECTOR(item); dir.x *= -1.0f; dir.y *= -1.0f; dir.z *= -1.0f;
@@ -2045,8 +2089,11 @@ void cShineTorchSequence::UpdateControls()
 	if (sequenceState != LOOP)
 		return;
 
-	AddScaleformInstructionalButton(control, input, "Hold to stop", true);
-	RunScaleformInstructionalButtons();
+	if (instructionalButtonsText != NULL)
+	{
+		AddScaleformInstructionalButton(control, input, instructionalButtonsText, true);
+		RunScaleformInstructionalButtons();
+	}
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
@@ -2103,6 +2150,170 @@ void cShineTorchSequence::Update()
 
 	shouldStopSequence = false; //Reset var
 	DeleteEntity(&item); //Force delete old item
+	return;
+}
+#pragma endregion
+
+//////////////////////////////////LIFT CURL BAR/////////////////////////////
+#pragma region Lift Curl Bar
+static constexpr int curlBarHash = 0xA345B107;		//Prop_Curl_bar_01
+static constexpr char* curlBarBaseAnimDict = "amb@world_human_muscle_free_weights@male@barbell@base";
+static constexpr char* curlBarBaseAnim = "base";
+static constexpr char* curlBarIdleAnimDict = "amb@world_human_muscle_free_weights@male@barbell@idle_a";
+static constexpr char* curlBarIdleAnim = "idle_a";
+
+void cLiftCurlBarSequence::StopAllAnims()
+{
+	StopAnimTask(playerPed, curlBarBaseAnimDict, curlBarBaseAnim);
+	StopAnimTask(playerPed, curlBarIdleAnimDict, curlBarIdleAnim);
+	REMOVE_ANIM_DICT(curlBarBaseAnimDict);
+	REMOVE_ANIM_DICT(curlBarIdleAnimDict);
+	return;
+}
+
+void cLiftCurlBarSequence::PlaySequence()
+{
+	const int rightHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_R_HAND);
+
+	SetPlayerControls(); //Player control should be disabled here and not during the sequence
+
+	switch (sequenceState)
+	{
+	case INITIALIZED:
+		item = CreateObject(curlBarHash);
+		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
+		ATTACH_ENTITY_TO_ENTITY(item, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+
+		PlayAnimAndWait(curlBarBaseAnimDict, curlBarBaseAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, HOLD, 0.0f, SLOW_BLEND_IN, SLOWEST_BLEND_OUT);
+		break;
+	case WAITING_FOR_ANIMATION_TO_END:
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
+			sequenceState = nextSequenceState;
+		break;
+	case LIFT:
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, curlBarBaseAnimDict, curlBarBaseAnim, 3))
+			PlayAnimAndWait(curlBarBaseAnimDict, curlBarBaseAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, HOLD, 0.0f, INSTANT_BLEND_IN, SLOWEST_BLEND_OUT);
+		break;
+	case HOLD:
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, curlBarIdleAnimDict, curlBarIdleAnim, 3))
+			PlayAnimTask(playerPed, curlBarIdleAnimDict, curlBarIdleAnim, upperSecondaryAF | AF_LOOPING, 0.0f, INSTANT_BLEND_IN, SLOWEST_BLEND_OUT);
+		break;
+	case EXITING:
+		StopAllAnims();
+		sequenceState = FLUSH_ASSETS;
+		break;
+	case FLUSH_ASSETS:
+		DETACH_ENTITY(item, false, false);
+		SET_ENTITY_AS_NO_LONGER_NEEDED(&item);
+		SET_MODEL_AS_NO_LONGER_NEEDED(curlBarHash);
+
+		REMOVE_ANIM_DICT(curlBarBaseAnimDict);
+		REMOVE_ANIM_DICT(curlBarIdleAnimDict);
+		shouldStopSequence = false;
+		sequenceState = FINISHED;
+		break;
+	case STREAM_ASSETS_IN:
+		if (RequestModel(curlBarHash) && RequestAnimDict(curlBarBaseAnimDict) && RequestAnimDict(curlBarIdleAnimDict))
+		{
+			sequenceState = INITIALIZED;
+			nextSequenceState = NULL;
+			shouldPlayerStandStill = false;
+			lastAnimDict = NULL;
+			lastAnim = NULL;
+			item = NULL;
+		}
+		break;
+	}
+
+	//Disable ped gestures and block non-player peds from reacting to temporary events
+	SetPedMovementAndReactions();
+	return;
+}
+
+void cLiftCurlBarSequence::SetState(int state)
+{
+	if (IS_ENTITY_PLAYING_ANIM(playerPed, curlBarBaseAnimDict, curlBarBaseAnim, 3))
+		return;
+
+	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
+		sequenceState = EXITING;
+	else if (state != EXITING && state != sequenceState)
+		sequenceState = state;
+
+	return;
+}
+
+void cLiftCurlBarSequence::UpdateControls()
+{
+	if (sequenceState != HOLD)
+		return;
+
+	if (instructionalButtonsText != NULL)
+	{
+		AddScaleformInstructionalButton(control, input, instructionalButtonsText, true);
+		RunScaleformInstructionalButtons();
+	}
+
+	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
+	{
+		controlTimer.Set(0);
+		return;
+	}
+
+	if (controlTimer.Get() < holdTime)
+	{
+		if (IS_DISABLED_CONTROL_JUST_RELEASED(control, input))
+			SetState(LIFT);
+	}
+	else if (IS_DISABLED_CONTROL_PRESSED(control, input))
+		shouldStopSequence = true;
+
+	return;
+}
+
+void cLiftCurlBarSequence::ForceStop()
+{
+	if (sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+		return;
+
+	StopAllAnims();
+	shouldStopSequence = false;
+	sequenceState = FLUSH_ASSETS;
+	PlaySequence();
+	DeleteEntity(&item);
+	return;
+}
+
+void cLiftCurlBarSequence::Update()
+{
+	if (sequenceState != FINISHED)
+	{
+		if (!AdditionalChecks(playerPed))
+		{
+			ForceStop();
+			return;
+		}
+
+		PlaySequence();
+		if (shouldStopSequence)
+		{
+			if (stopTimer.Get() > maxStopTimer)
+			{
+				ForceStop();
+				return;
+			}
+
+			SetState(EXITING);
+		}
+		else
+			stopTimer.Set(0);
+
+		UpdateControls();
+		return;
+	}
+
+	shouldStopSequence = false; //Reset var
 	return;
 }
 #pragma endregion

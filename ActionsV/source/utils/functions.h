@@ -45,8 +45,8 @@ bool SetAnimSpeed(Entity entity, const char* animDict, const char* animName, flo
 void PlayAmbientSpeech(Ped ped, char* speechName);
 
 #pragma region Inline
-inline void PlayAnimTask(Ped ped, const char* animDictionary, const char* animationName, int flag = AF_DEFAULT, int duration = -1, float blendInSpeed = WALK_BLEND_IN, float blendOutSpeed = WALK_BLEND_OUT, float playbackRate = 0.0f, bool lockX = false, bool lockY = false, bool lockZ = false)
+inline void PlayAnimTask(Ped ped, const char* animDictionary, const char* animationName, int flag = AF_DEFAULT, float startPhase = 0.0f, float blendInSpeed = SLOW_BLEND_IN, float blendOutSpeed = SLOW_BLEND_OUT, int duration = -1)
 {
-	TASK_PLAY_ANIM(ped, animDictionary, animationName, blendInSpeed, blendOutSpeed, duration, flag, playbackRate, lockX, lockY, lockZ);
+	TASK_PLAY_ANIM(ped, animDictionary, animationName, blendInSpeed, blendOutSpeed, duration, flag, startPhase, false, false, false);
 }
 #pragma endregion

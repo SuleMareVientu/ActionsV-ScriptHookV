@@ -883,6 +883,7 @@ int mopWithBucketStatus = -1;
 int cameraStatus = -1;
 int mobileTextStatus = -1;
 int shineTorchStatus = -1;
+int liftCurlBarStatus = -1;
 void SampleSub()
 {
 	AddTitle("Actions");
@@ -934,6 +935,10 @@ void SampleSub()
 	should = false; shouldNot = false;
 	AddLocal("Torch", shineTorchSequence.IsActive(), should, shouldNot, shineTorchStatus);
 	SequenceOption(should, shouldNot, shineTorchStatus, shineTorchSequence);
+
+	should = false; shouldNot = false;
+	AddLocal("Lift Curl Bar", liftCurlBarSequence.IsActive(), should, shouldNot, liftCurlBarStatus);
+	SequenceOption(should, shouldNot, liftCurlBarStatus, liftCurlBarSequence);
 }
 
 void YourSub()

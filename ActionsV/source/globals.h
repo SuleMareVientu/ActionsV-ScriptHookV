@@ -19,6 +19,9 @@ constexpr float PEDMOVEBLENDRATIO_RUN = 2.0f;
 constexpr float PEDMOVEBLENDRATIO_SPRINT = 3.0f;
 
 //Animation blend in/out ratios
+constexpr float SLOWEST_BLEND_IN = 0.5f;		// custom
+constexpr float SLOWEST_BLEND_OUT = -0.5f;		// custom
+
 constexpr float WALK_BLEND_IN = 1.5f;			// 20frms
 constexpr float WALK_BLEND_OUT = -1.5f;			// 20frms
 constexpr float REALLY_SLOW_BLEND_IN = 2.0f;	// 15frms

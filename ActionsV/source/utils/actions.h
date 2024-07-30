@@ -22,6 +22,8 @@ enum eSequenceState
 
 // Sound should always be played from playerPed and never Objects (sound stops in interiors)
 
+static constexpr char* genericMessage = "Hold to stop";
+
 class cSequence
 {
 public:
@@ -57,12 +59,13 @@ protected:
 	Timer stopTimer;
 	int maxStopTimer = 10000;
 
+	char* instructionalButtonsText = NULL;
 	ControlType control = PLAYER_CONTROL;
 	ControlAction input = INPUT_JUMP;
 	Timer controlTimer;
 	short holdTime = 250;
 
-	void PlayAnimAndWait(char *animDict, char *anim, int flag, int nextState, float startPhase = 0.0f, float blendInSpeed = WALK_BLEND_IN, float blendOutSpeed = WALK_BLEND_OUT, bool standStill = false, int duration = -1);
+	void PlayAnimAndWait(char *animDict, char *anim, int flag, int nextState, float startPhase = 0.0f, float blendInSpeed = SLOW_BLEND_IN, float blendOutSpeed = SLOW_BLEND_OUT, bool standStill = false, int duration = -1);
 	void SetPlayerControls();
 	void SetPedMovementAndReactions() const;
 };
@@ -72,7 +75,7 @@ class cSmokingSequence : public cSequence
 public:
 	void Update();
 
-	cSmokingSequence() { maxStopTimer = 20000; }
+	cSmokingSequence() { maxStopTimer = 20000; instructionalButtonsText = "Smoke (hold to stop)"; }
 
 private:
 	enum SequenceState
@@ -82,7 +85,8 @@ private:
 		INITIALIZED = SEQUENCE_INITIALIZED,
 		WAITING_FOR_ANIMATION_TO_END = SEQUENCE_WAITING_FOR_ANIMATION_TO_END,
 		FLUSH_ASSETS = SEQUENCE_FLUSH_ASSETS,
-		LOOP,
+		ENTER_SMOKE,
+		SMOKE,
 		EXITING
 	};
 
@@ -112,7 +116,7 @@ class cDrinkingSequence : public cSequence
 public:
 	void Update();
 
-	cDrinkingSequence() { maxStopTimer = 5000; }
+	cDrinkingSequence() { maxStopTimer = 5000; instructionalButtonsText = "Drink (hold to stop)"; }
 
 private:
 	enum SequenceState
@@ -148,7 +152,8 @@ class cLeafBlowerSequence : public cSequence
 public:
 	void Update();
 
-	cLeafBlowerSequence() { maxStopTimer = 2000; canSprint = true; maxMoveBlendRatio = PEDMOVEBLENDRATIO_SPRINT; }
+	cLeafBlowerSequence() { maxStopTimer = 2000; canSprint = true; maxMoveBlendRatio = PEDMOVEBLENDRATIO_SPRINT; 
+							instructionalButtonsText = "Toggle (hold to stop)"; }
 
 private:
 	enum SequenceState
@@ -185,7 +190,7 @@ class cJogSequence : public cSequence
 public:
 	void Update();
 
-	cJogSequence() { maxStopTimer = 2000; }
+	cJogSequence() { maxStopTimer = 2000; instructionalButtonsText = genericMessage; }
 
 private:
 	enum SequenceState
@@ -213,7 +218,8 @@ class cClipboardSequence : public cSequence
 public:
 	void Update();
 
-	cClipboardSequence() { maxStopTimer = 2000; canSprint = true; maxMoveBlendRatio = PEDMOVEBLENDRATIO_SPRINT; }
+	cClipboardSequence() { maxStopTimer = 2000; canSprint = true; maxMoveBlendRatio = PEDMOVEBLENDRATIO_SPRINT;
+	instructionalButtonsText = genericMessage; }
 
 private:
 	enum SequenceState
@@ -243,7 +249,7 @@ class cGuitarSequence : public cSequence
 public:
 	void Update();
 
-	cGuitarSequence() { maxStopTimer = 3500; }
+	cGuitarSequence() { maxStopTimer = 3500; instructionalButtonsText = genericMessage; }
 
 private:
 	enum SequenceState
@@ -275,7 +281,7 @@ class cBongosSequence : public cSequence
 public:
 	void Update();
 
-	cBongosSequence() { maxStopTimer = 3500; }
+	cBongosSequence() { maxStopTimer = 3500; instructionalButtonsText = genericMessage; }
 
 private:
 	enum SequenceState
@@ -307,7 +313,8 @@ class cMopSequence : public cSequence
 public:
 	void Update();
 
-	cMopSequence() { maxStopTimer = 2000; canSprint = true; maxMoveBlendRatio = PEDMOVEBLENDRATIO_SPRINT; }
+	cMopSequence() { maxStopTimer = 2000; canSprint = true; maxMoveBlendRatio = PEDMOVEBLENDRATIO_SPRINT;
+					 instructionalButtonsText = genericMessage; }
 
 private:
 	enum SequenceState
@@ -337,7 +344,7 @@ class cMopWithBucketSequence : public cSequence
 public:
 	void Update();
 
-	cMopWithBucketSequence() { maxStopTimer = 2000; }
+	cMopWithBucketSequence() { maxStopTimer = 2000; instructionalButtonsText = genericMessage; }
 
 private:
 	enum SequenceState
@@ -368,7 +375,8 @@ class cCameraSequence : public cSequence
 public:
 	void Update();
 
-	cCameraSequence() { maxStopTimer = 2000; canSprint = true; maxMoveBlendRatio = PEDMOVEBLENDRATIO_SPRINT; }
+	cCameraSequence() { maxStopTimer = 2000; canSprint = true; maxMoveBlendRatio = PEDMOVEBLENDRATIO_SPRINT;
+						instructionalButtonsText = "Take a picture (hold to stop)"; }
 
 private:
 	enum SequenceState
@@ -403,7 +411,7 @@ class cMobileTextSequence : public cSequence
 public:
 	void Update();
 
-	cMobileTextSequence() { maxStopTimer = 10000; }
+	cMobileTextSequence() { maxStopTimer = 9000; instructionalButtonsText = genericMessage; }
 
 private:
 	enum SequenceState
@@ -435,7 +443,7 @@ class cShineTorchSequence : public cSequence
 public:
 	void Update();
 
-	cShineTorchSequence() { maxStopTimer = 10000; }
+	cShineTorchSequence() { maxStopTimer = 6000; instructionalButtonsText = genericMessage; }
 
 private:
 	enum SequenceState
@@ -447,6 +455,39 @@ private:
 		FLUSH_ASSETS = SEQUENCE_FLUSH_ASSETS,
 		LOOP,
 		EXITING
+	};
+
+	Object item = NULL;
+
+	void StopAllAnims();
+
+	void PlaySequence();
+
+	void SetState(int state);
+
+	void UpdateControls();
+
+	void ForceStop();
+};
+
+class cLiftCurlBarSequence : public cSequence
+{
+public:
+	void Update();
+
+	cLiftCurlBarSequence() { maxStopTimer = 10000; instructionalButtonsText = "Lift (hold to stop)"; }
+
+private:
+	enum SequenceState
+	{
+		FINISHED = SEQUENCE_FINISHED,
+		STREAM_ASSETS_IN = SEQUENCE_STREAM_ASSETS_IN,
+		INITIALIZED = SEQUENCE_INITIALIZED,
+		WAITING_FOR_ANIMATION_TO_END = SEQUENCE_WAITING_FOR_ANIMATION_TO_END,
+		FLUSH_ASSETS = SEQUENCE_FLUSH_ASSETS,
+		LIFT,
+		HOLD,
+		EXITING,
 	};
 
 	Object item = NULL;
@@ -477,3 +518,4 @@ extern cMopWithBucketSequence mopWithBucketSequence;
 extern cCameraSequence cameraSequence;
 extern cMobileTextSequence mobileTextSequence;
 extern cShineTorchSequence shineTorchSequence;
+extern cLiftCurlBarSequence liftCurlBarSequence;
