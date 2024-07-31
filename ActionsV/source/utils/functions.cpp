@@ -460,4 +460,11 @@ void PlayAmbientSpeech(Ped ped, char* speechName)
 	AUDIO::SET_AUDIO_FLAG("IsDirectorModeActive", false);
 	return;
 }
+
+int GetRandomIntInRange(int startRange, int endRange)
+{
+	endRange += 1;
+	SET_RANDOM_SEED(GET_GAME_TIMER());
+	return GET_RANDOM_INT_IN_RANGE(startRange, endRange);
+}
 #pragma endregion

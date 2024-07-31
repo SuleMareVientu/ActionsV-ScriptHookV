@@ -53,6 +53,7 @@ protected:
 	bool disabledControlsLastFrame = false;
 	bool shouldPlayerStandStill = false;
 
+	bool disableFirstPersonView = false;
 	bool canSprint = false;
 	float maxMoveBlendRatio = PEDMOVEBLENDRATIO_WALK;
 
@@ -152,8 +153,10 @@ class cLeafBlowerSequence : public cSequence
 public:
 	void Update();
 
-	cLeafBlowerSequence() { maxStopTimer = 2000; canSprint = true; maxMoveBlendRatio = PEDMOVEBLENDRATIO_SPRINT; 
-							instructionalButtonsText = "Toggle (hold to stop)"; }
+	cLeafBlowerSequence() {
+		maxStopTimer = 2000; canSprint = true; maxMoveBlendRatio = PEDMOVEBLENDRATIO_SPRINT;
+		disableFirstPersonView = true;  instructionalButtonsText = "Toggle (hold to stop)";
+	}
 
 private:
 	enum SequenceState
@@ -190,7 +193,7 @@ class cJogSequence : public cSequence
 public:
 	void Update();
 
-	cJogSequence() { maxStopTimer = 2000; instructionalButtonsText = genericMessage; }
+	cJogSequence() { maxStopTimer = 2000; instructionalButtonsText = genericMessage; disableFirstPersonView = true; }
 
 private:
 	enum SequenceState
@@ -218,8 +221,10 @@ class cClipboardSequence : public cSequence
 public:
 	void Update();
 
-	cClipboardSequence() { maxStopTimer = 2000; canSprint = true; maxMoveBlendRatio = PEDMOVEBLENDRATIO_SPRINT;
-	instructionalButtonsText = genericMessage; }
+	cClipboardSequence() {
+		maxStopTimer = 2000; canSprint = true; maxMoveBlendRatio = PEDMOVEBLENDRATIO_SPRINT;
+		disableFirstPersonView = true; instructionalButtonsText = genericMessage;
+	}
 
 private:
 	enum SequenceState
@@ -313,8 +318,10 @@ class cMopSequence : public cSequence
 public:
 	void Update();
 
-	cMopSequence() { maxStopTimer = 2000; canSprint = true; maxMoveBlendRatio = PEDMOVEBLENDRATIO_SPRINT;
-					 instructionalButtonsText = genericMessage; }
+	cMopSequence() {
+		maxStopTimer = 2000; canSprint = true; maxMoveBlendRatio = PEDMOVEBLENDRATIO_SPRINT;
+		disableFirstPersonView = true; instructionalButtonsText = genericMessage;
+	}
 
 private:
 	enum SequenceState
@@ -344,7 +351,7 @@ class cMopWithBucketSequence : public cSequence
 public:
 	void Update();
 
-	cMopWithBucketSequence() { maxStopTimer = 2000; instructionalButtonsText = genericMessage; }
+	cMopWithBucketSequence() { maxStopTimer = 2000; instructionalButtonsText = genericMessage; disableFirstPersonView = true; }
 
 private:
 	enum SequenceState
@@ -376,7 +383,7 @@ public:
 	void Update();
 
 	cCameraSequence() { maxStopTimer = 2000; canSprint = true; maxMoveBlendRatio = PEDMOVEBLENDRATIO_SPRINT;
-						instructionalButtonsText = "Take a picture (hold to stop)"; }
+						disableFirstPersonView = true; instructionalButtonsText = "Take a picture (hold to stop)"; }
 
 private:
 	enum SequenceState
@@ -503,6 +510,73 @@ private:
 	void ForceStop();
 };
 
+class cBinocularsSequence : public cSequence
+{
+public:
+	void Update();
+
+	cBinocularsSequence() { maxStopTimer = 6000; instructionalButtonsText = genericMessage; }
+
+private:
+	enum SequenceState
+	{
+		FINISHED = SEQUENCE_FINISHED,
+		STREAM_ASSETS_IN = SEQUENCE_STREAM_ASSETS_IN,
+		INITIALIZED = SEQUENCE_INITIALIZED,
+		WAITING_FOR_ANIMATION_TO_END = SEQUENCE_WAITING_FOR_ANIMATION_TO_END,
+		FLUSH_ASSETS = SEQUENCE_FLUSH_ASSETS,
+		LOOP,
+		EXITING
+	};
+
+	Object item = NULL;
+
+	void StopAllAnims();
+
+	void PlaySequence();
+
+	void SetState(int state);
+
+	void UpdateControls();
+
+	void ForceStop();
+};
+
+class cHoldBumSignSequence : public cSequence
+{
+public:
+	void Update();
+
+	cHoldBumSignSequence() { maxStopTimer = 3500; instructionalButtonsText = genericMessage; }
+
+private:
+	enum SequenceState
+	{
+		FINISHED = SEQUENCE_FINISHED,
+		STREAM_ASSETS_IN = SEQUENCE_STREAM_ASSETS_IN,
+		INITIALIZED = SEQUENCE_INITIALIZED,
+		WAITING_FOR_ANIMATION_TO_END = SEQUENCE_WAITING_FOR_ANIMATION_TO_END,
+		FLUSH_ASSETS = SEQUENCE_FLUSH_ASSETS,
+		LOOP,
+		EXITING,
+	};
+
+	Object item = NULL;
+	int itemHash = NULL;
+
+	int GetBumSignPropHash() const;
+
+	void StopAllAnims();
+
+	void PlaySequence();
+
+	void SetState(int state);
+
+	void UpdateControls();
+
+	void ForceStop();
+};
+
 void UpdateSequences();
 
 // Sequences
@@ -519,3 +593,5 @@ extern cCameraSequence cameraSequence;
 extern cMobileTextSequence mobileTextSequence;
 extern cShineTorchSequence shineTorchSequence;
 extern cLiftCurlBarSequence liftCurlBarSequence;
+extern cBinocularsSequence binocularsSequence;
+extern cHoldBumSignSequence holdBumSignSequence;

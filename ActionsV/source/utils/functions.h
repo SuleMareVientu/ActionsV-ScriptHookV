@@ -43,6 +43,7 @@ void AddScaleformInstructionalButton(int iButtonSlotControl, int iButtonSlotInpu
 
 bool SetAnimSpeed(Entity entity, const char* animDict, const char* animName, float speedMultiplier);
 void PlayAmbientSpeech(Ped ped, char* speechName);
+int GetRandomIntInRange(int startRange = 0, int endRange = 65535);
 
 #pragma region Inline
 inline void PlayAnimTask(Ped ped, const char* animDictionary, const char* animationName, int flag = AF_DEFAULT, float startPhase = 0.0f, float blendInSpeed = SLOW_BLEND_IN, float blendOutSpeed = SLOW_BLEND_OUT, int duration = -1)

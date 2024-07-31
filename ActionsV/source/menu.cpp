@@ -884,6 +884,8 @@ int cameraStatus = -1;
 int mobileTextStatus = -1;
 int shineTorchStatus = -1;
 int liftCurlBarStatus = -1;
+int binocularsStatus = -1;
+int holdBumSignStatus = -1;
 void SampleSub()
 {
 	AddTitle("Actions");
@@ -939,6 +941,14 @@ void SampleSub()
 	should = false; shouldNot = false;
 	AddLocal("Lift Curl Bar", liftCurlBarSequence.IsActive(), should, shouldNot, liftCurlBarStatus);
 	SequenceOption(should, shouldNot, liftCurlBarStatus, liftCurlBarSequence);
+
+	should = false; shouldNot = false;
+	AddLocal("Binoculars", binocularsSequence.IsActive(), should, shouldNot, binocularsStatus);
+	SequenceOption(should, shouldNot, binocularsStatus, binocularsSequence);
+
+	should = false; shouldNot = false;
+	AddLocal("Bum Sign", holdBumSignSequence.IsActive(), should, shouldNot, holdBumSignStatus);
+	SequenceOption(should, shouldNot, holdBumSignStatus, holdBumSignSequence);
 }
 
 void YourSub()
