@@ -4,7 +4,6 @@
 //Custom
 #include "actions.h"
 #include "functions.h"
-#include "keyboard.h"
 #include "..\script.h"
 
 cSmokingSequence smokingSequence;

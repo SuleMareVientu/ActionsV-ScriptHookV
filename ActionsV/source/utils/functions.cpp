@@ -369,10 +369,14 @@ void DisablePlayerControlThisFrame()
 #pragma endregion
 
 #pragma region Scaleforms
+bool showScaleformInstructionalButtons = true;
 static ScaleformInstructionalButtons DisplayStruct;
 static int InstructionalButtonsScaleformIndex = NULL;
 void RunScaleformInstructionalButtons(bool refresh)
 {
+	if (!showScaleformInstructionalButtons)
+		return;
+
 	if (!HAS_SCALEFORM_MOVIE_LOADED(InstructionalButtonsScaleformIndex))
 	{
 		InstructionalButtonsScaleformIndex = REQUEST_SCALEFORM_MOVIE("instructional_buttons");

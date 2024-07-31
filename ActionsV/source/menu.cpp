@@ -848,6 +848,7 @@ void Settings()
 	AddTitle("Settings");
 	AddToggle("Centre Title", Menu::bit_centre_title);
 	AddToggle("Centre Options", Menu::bit_centre_options);
+	AddToggle("Show Tooltips", showScaleformInstructionalButtons);
 	AddNumber("Menu X Offset", menuXOffset, 2, bNULL, MenuXOffsetPlus, MenuXOffsetMinus);
 	AddNumber("Menu Y Offset", menuYOffset, 2, bNULL, MenuYOffsetPlus, MenuYOffsetMinus);
 

@@ -8,6 +8,7 @@ typedef struct { int R, G, B, A; } RGBA;
 //Globals
 extern Player player;
 extern Ped playerPed;
+extern bool showScaleformInstructionalButtons;
 
 //Constants
 constexpr Hash WEAPON_UNARMED = -1569615261;
