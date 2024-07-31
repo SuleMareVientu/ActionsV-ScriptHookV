@@ -17,6 +17,9 @@
     <ClCompile Include="source\utils\menuEntries.cpp">
       <Filter>utils</Filter>
     </ClCompile>
+    <ClCompile Include="source\utils\ini.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\script.h" />
@@ -30,6 +33,9 @@
       <Filter>utils</Filter>
     </ClInclude>
     <ClInclude Include="source\utils\menuEntries.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="source\utils\ini.h">
       <Filter>utils</Filter>
     </ClInclude>
   </ItemGroup>

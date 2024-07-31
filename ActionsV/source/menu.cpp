@@ -20,8 +20,10 @@ enum SUBMENU {
 	MAINMENU,
 	SETTINGS,
 	// Others:
-	DRINK,
-	MISC
+	SMOKE_AND_DRINK,
+	HOBBIES_AND_ACTIVITIES,
+	TOOLS_AND_UTILITIES,
+	MISCELLANEOUS
 };
 
 char str[69];
@@ -41,9 +43,8 @@ float menuXOffset = 0.0f, menuYOffset = 0.0f, optionCoord = 0.0f, menuYStart = 0
 inline float GetMenuX() { return menuX + menuXOffset; }
 inline float GetMenuY() { return menuY + menuYOffset; }
 Vehicle playerVeh;
-float currentTimescale = 1.0f;
 
-char* menuTitle = "MenuBase";
+char* menuTitle = "ActionsV";
 
 // Booleans for loops go here:
 //bool test = 0;
@@ -833,8 +834,10 @@ namespace Submenus {
 void MainMenu()
 {
 	AddTitle(menuTitle);
-	AddOption("Actions", bNULL, nullFunc, SUBMENU::DRINK);
-	AddOption("Large Submenu", bNULL, nullFunc, SUBMENU::MISC);
+	AddOption("Smoke & Drink", bNULL, nullFunc, SUBMENU::SMOKE_AND_DRINK);
+	AddOption("Hobbies & Activities", bNULL, nullFunc, SUBMENU::HOBBIES_AND_ACTIVITIES);
+	AddOption("Tools & Utilities", bNULL, nullFunc, SUBMENU::TOOLS_AND_UTILITIES);
+	AddOption("Miscellaneous", bNULL, nullFunc, SUBMENU::MISCELLANEOUS);
 	AddOption("Settings", bNULL, nullFunc, SUBMENU::SETTINGS);
 }
 
@@ -873,127 +876,107 @@ void Settings()
 
 int smokingStatus = -1;
 int drinkingStatus = -1;
-int leafBlowerStatus = -1;
-int jogStatus = -1;
-int clipboardStatus = -1;
-int guitarStatus = -1;
-int bongosStatus = -1;
-int mopSatus = -1;
-int mopWithBucketStatus = -1;
-int cameraStatus = -1;
-int mobileTextStatus = -1;
-int shineTorchStatus = -1;
-int liftCurlBarStatus = -1;
-int binocularsStatus = -1;
-int holdBumSignStatus = -1;
-void SampleSub()
-{
+void SmokeAndDrink()
+{	
 	AddTitle("Actions");
 
 	bool should = false, shouldNot = false;
-	AddLocal("Smoke", smokingSequence.IsActive(), should, shouldNot, smokingStatus);
+	AddLocal("Smoke Cigarette", smokingSequence.IsActive(), should, shouldNot, smokingStatus);
 	SequenceOption(should, shouldNot, smokingStatus, smokingSequence);
 
 	should = false; shouldNot = false;
-	AddLocal("Drink", drinkingSequence.IsActive(), should, shouldNot, drinkingStatus);
+	AddLocal("Drink Beer", drinkingSequence.IsActive(), should, shouldNot, drinkingStatus);
 	SequenceOption(should, shouldNot, drinkingStatus, drinkingSequence);
+	return;
+}
+
+int guitarStatus = -1;
+int bongosStatus = -1;
+int liftCurlBarStatus = -1;
+int fishingStatus = -1;
+int jogStatus = -1;
+void HobbiesAndActivities()
+{
+	AddTitle("Activities");
+
+	bool should = false; bool shouldNot = false;
+	AddLocal("Play Guitar", guitarSequence.IsActive(), should, shouldNot, guitarStatus);
+	SequenceOption(should, shouldNot, guitarStatus, guitarSequence);
 
 	should = false; shouldNot = false;
-	AddLocal("Leaf Blower", leafBlowerSequence.IsActive(), should, shouldNot, leafBlowerStatus);
-	SequenceOption(should, shouldNot, leafBlowerStatus, leafBlowerSequence);
+	AddLocal("Play Bongos", bongosSequence.IsActive(), should, shouldNot, bongosStatus);
+	SequenceOption(should, shouldNot, bongosStatus, bongosSequence);
+
+	should = false; shouldNot = false;
+	AddLocal("Fish", fishingSequence.IsActive(), should, shouldNot, fishingStatus);
+	SequenceOption(should, shouldNot, fishingStatus, fishingSequence);
+
+	should = false; shouldNot = false;
+	AddLocal("Lift Weights", liftCurlBarSequence.IsActive(), should, shouldNot, liftCurlBarStatus);
+	SequenceOption(should, shouldNot, liftCurlBarStatus, liftCurlBarSequence);
 
 	should = false; shouldNot = false;
 	AddLocal("Jog", jogSequence.IsActive(), should, shouldNot, jogStatus);
 	SequenceOption(should, shouldNot, jogStatus, jogSequence);
+	return;
+}
+
+int shineTorchStatus = -1;
+int clipboardStatus = -1;
+int leafBlowerStatus = -1;
+int mopSatus = -1;
+int mopWithBucketStatus = -1;
+void ToolsAndUtilities()
+{
+	AddTitle("Utilities");
+
+	bool should = false; bool shouldNot = false;
+	AddLocal("Torch", shineTorchSequence.IsActive(), should, shouldNot, shineTorchStatus);
+	SequenceOption(should, shouldNot, shineTorchStatus, shineTorchSequence);
 
 	should = false; shouldNot = false;
 	AddLocal("Clipboard", clipboardSequence.IsActive(), should, shouldNot, clipboardStatus);
 	SequenceOption(should, shouldNot, clipboardStatus, clipboardSequence);
 
 	should = false; shouldNot = false;
-	AddLocal("Guitar", guitarSequence.IsActive(), should, shouldNot, guitarStatus);
-	SequenceOption(should, shouldNot, guitarStatus, guitarSequence);
-
-	should = false; shouldNot = false;
-	AddLocal("Bongos", bongosSequence.IsActive(), should, shouldNot, bongosStatus);
-	SequenceOption(should, shouldNot, bongosStatus, bongosSequence);
+	AddLocal("Leaf Blower", leafBlowerSequence.IsActive(), should, shouldNot, leafBlowerStatus);
+	SequenceOption(should, shouldNot, leafBlowerStatus, leafBlowerSequence);
 
 	should = false; shouldNot = false;
 	AddLocal("Mop", mopSequence.IsActive(), should, shouldNot, mopSatus);
 	SequenceOption(should, shouldNot, mopSatus, mopSequence);
 
 	should = false; shouldNot = false;
-	AddLocal("Mop with bucket", mopWithBucketSequence.IsActive(), should, shouldNot, mopWithBucketStatus);
+	AddLocal("Mop with Bucket", mopWithBucketSequence.IsActive(), should, shouldNot, mopWithBucketStatus);
 	SequenceOption(should, shouldNot, mopWithBucketStatus, mopWithBucketSequence);
+	return;
+}
 
-	should = false; shouldNot = false;
+int cameraStatus = -1;
+int mobileTextStatus = -1;
+int binocularsStatus = -1;
+int holdBumSignStatus = -1;
+void Miscellaneous()
+
+{
+	AddTitle("Miscellaneous");
+
+	bool should = false; bool shouldNot = false;
 	AddLocal("Camera", cameraSequence.IsActive(), should, shouldNot, cameraStatus);
 	SequenceOption(should, shouldNot, cameraStatus, cameraSequence);
 
 	should = false; shouldNot = false;
-	AddLocal("Mobile", mobileTextSequence.IsActive(), should, shouldNot, mobileTextStatus);
+	AddLocal("Mobile Text", mobileTextSequence.IsActive(), should, shouldNot, mobileTextStatus);
 	SequenceOption(should, shouldNot, mobileTextStatus, mobileTextSequence);
-
-	should = false; shouldNot = false;
-	AddLocal("Torch", shineTorchSequence.IsActive(), should, shouldNot, shineTorchStatus);
-	SequenceOption(should, shouldNot, shineTorchStatus, shineTorchSequence);
-
-	should = false; shouldNot = false;
-	AddLocal("Lift Curl Bar", liftCurlBarSequence.IsActive(), should, shouldNot, liftCurlBarStatus);
-	SequenceOption(should, shouldNot, liftCurlBarStatus, liftCurlBarSequence);
 
 	should = false; shouldNot = false;
 	AddLocal("Binoculars", binocularsSequence.IsActive(), should, shouldNot, binocularsStatus);
 	SequenceOption(should, shouldNot, binocularsStatus, binocularsSequence);
 
 	should = false; shouldNot = false;
-	AddLocal("Bum Sign", holdBumSignSequence.IsActive(), should, shouldNot, holdBumSignStatus);
+	AddLocal("Beggar Sign", holdBumSignSequence.IsActive(), should, shouldNot, holdBumSignStatus);
 	SequenceOption(should, shouldNot, holdBumSignStatus, holdBumSignSequence);
-}
-
-void YourSub()
-{
-	// Initialise local variables here:
-	bool print = false;
-
-	// Options' text here:
-	AddTitle("Test");
-	AddOption("Option 1", print);
-	AddOption("Option 2", print);
-	AddOption("Option 3", print);
-	AddOption("Option 4", print);
-	AddOption("Option 5", print);
-	AddOption("Option 6", print);
-	AddOption("Option 7", print);
-	AddOption("Option 8", print);
-	AddOption("Option 9", print);
-	AddOption("Option 10", print);
-	AddOption("Option 11", print);
-	AddOption("Option 12", print);
-	AddOption("Option 13", print);
-	AddOption("Option 14", print);
-	AddOption("Option 15", print);
-	AddOption("Option 16", print);
-	AddOption("Option 17", print);
-	AddOption("Option 18", print);
-	AddOption("Option 19", print);
-	AddOption("Option 20", print);
-	AddOption("Option 21", print);
-	AddOption("Option 22", print);
-	AddOption("Option 23", print);
-	AddOption("Option 24", print);
-	AddOption("Option 25", print);
-	AddOption("Option 26", print);
-	AddOption("Option 27", print);
-	AddOption("Option 28", print);
-	AddOption("Option 29", print);
-	AddOption("Option 30", print);
-	AddOption("Option 31", print);
-	AddOption("Option 32", print);
-
-	// Options' code here:
-	if (print)
-		return; // Either use return; to exit to the switch if you don't have code below that you want executed.
+	return;
 }
 }	//END Submenus
 
@@ -1015,8 +998,10 @@ void Menu::SubmenuSwitch()
 	{
 	case SUBMENU::MAINMENU:					Submenus::MainMenu(); break;
 	case SUBMENU::SETTINGS:					Submenus::Settings(); break;
-	case SUBMENU::DRINK:					Submenus::SampleSub(); break;
-	case SUBMENU::MISC:						Submenus::YourSub(); break;
+	case SUBMENU::SMOKE_AND_DRINK:			Submenus::SmokeAndDrink(); break;
+	case SUBMENU::HOBBIES_AND_ACTIVITIES:	Submenus::HobbiesAndActivities(); break;
+	case SUBMENU::TOOLS_AND_UTILITIES:		Submenus::ToolsAndUtilities(); break;
+	case SUBMENU::MISCELLANEOUS:			Submenus::Miscellaneous(); break;
 	//	case SUB::NAME						sub::name(); break;
 	}
 }

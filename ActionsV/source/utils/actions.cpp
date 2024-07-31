@@ -22,13 +22,14 @@ cShineTorchSequence shineTorchSequence;
 cLiftCurlBarSequence liftCurlBarSequence;
 cBinocularsSequence binocularsSequence;
 cHoldBumSignSequence holdBumSignSequence;
+cFishingSequence fishingSequence;
 
-static constexpr int maxSequences = 15;
+static constexpr int maxSequences = 16;
 constexpr cSequence* sequences[maxSequences] = { 
 	&smokingSequence, &drinkingSequence, &leafBlowerSequence, &jogSequence, &clipboardSequence,
 	&guitarSequence, &bongosSequence, &mopSequence, &mopWithBucketSequence, &cameraSequence,
 	&mobileTextSequence, &shineTorchSequence, &liftCurlBarSequence, &binocularsSequence,
-	&holdBumSignSequence
+	&holdBumSignSequence, &fishingSequence
 };
 
 static constexpr char* CORE_PTFX_ASSET = "core";
@@ -2536,7 +2537,6 @@ void cHoldBumSignSequence::PlaySequence()
 	switch (sequenceState)
 	{
 	case INITIALIZED:
-		StopAudioStream();
 		item = CreateObject(itemHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
 		ATTACH_ENTITY_TO_ENTITY(item, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
@@ -2633,6 +2633,153 @@ void cHoldBumSignSequence::ForceStop()
 }
 
 void cHoldBumSignSequence::Update()
+{
+	if (sequenceState != FINISHED)
+	{
+		if (!AdditionalChecks(playerPed))
+		{
+			ForceStop();
+			return;
+		}
+
+		PlaySequence();
+		if (shouldStopSequence)
+		{
+			if (stopTimer.Get() > maxStopTimer)
+			{
+				ForceStop();
+				return;
+			}
+
+			SetState(EXITING);
+		}
+		else
+			stopTimer.Set(0);
+
+		UpdateControls();
+		return;
+	}
+
+	shouldStopSequence = false; //Reset var
+	return;
+}
+#pragma endregion
+
+//////////////////////////////////FISHING/////////////////////////////
+#pragma region Fishing
+static constexpr int fishingRodHash = 0x8E1E7CCF;		//Prop_Fishing_Rod_01
+static constexpr char* fishingAnimDict = "amb@world_human_stand_fishing@base";
+static constexpr char* fishingBaseAnim = "base";
+
+void cFishingSequence::StopAllAnims()
+{
+	StopAnimTask(playerPed, fishingAnimDict, fishingBaseAnim);
+	REMOVE_ANIM_DICT(fishingAnimDict);
+	return;
+}
+
+void cFishingSequence::PlaySequence()
+{
+	const int leftHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_L_HAND);
+
+	SetPlayerControls(); //Player control should be disabled here and not during the sequence
+
+	switch (sequenceState)
+	{
+	case INITIALIZED:
+		item = CreateObject(fishingRodHash);
+		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
+		ATTACH_ENTITY_TO_ENTITY(item, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+		PlayAnimTask(playerPed, fishingAnimDict, fishingBaseAnim, upperSecondaryAF | AF_LOOPING);
+		sequenceState = LOOP;
+		break;
+	case WAITING_FOR_ANIMATION_TO_END:
+		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
+			sequenceState = nextSequenceState;
+		break;
+	case LOOP:
+		break;
+	case EXITING:
+		StopAllAnims();
+		sequenceState = FLUSH_ASSETS;
+		break;
+	case FLUSH_ASSETS:
+		DETACH_ENTITY(item, false, false);
+		SET_ENTITY_AS_NO_LONGER_NEEDED(&item);
+		SET_MODEL_AS_NO_LONGER_NEEDED(fishingRodHash);
+
+		REMOVE_ANIM_DICT(fishingAnimDict);
+		shouldStopSequence = false;
+		sequenceState = FINISHED;
+		break;
+	case STREAM_ASSETS_IN:
+		if (RequestModel(fishingRodHash) && RequestAnimDict(fishingAnimDict))
+		{
+			sequenceState = INITIALIZED;
+			nextSequenceState = NULL;
+			shouldPlayerStandStill = false;
+			lastAnimDict = NULL;
+			lastAnim = NULL;
+			item = NULL;
+		}
+		break;
+	}
+
+	//Disable ped gestures and block non-player peds from reacting to temporary events
+	SetPedMovementAndReactions();
+	return;
+}
+
+void cFishingSequence::SetState(int state)
+{
+	StopAnimTask(playerPed, fishingAnimDict, fishingBaseAnim);
+
+	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
+		sequenceState = EXITING;
+	else if (state != EXITING && state != sequenceState)
+		sequenceState = state;
+
+	return;
+}
+
+void cFishingSequence::UpdateControls()
+{
+	if (sequenceState != LOOP)
+		return;
+
+	if (instructionalButtonsText != NULL)
+	{
+		AddScaleformInstructionalButton(control, input, instructionalButtonsText, true);
+		RunScaleformInstructionalButtons();
+	}
+
+	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
+	{
+		controlTimer.Set(0);
+		return;
+	}
+
+	if (controlTimer.Get() > holdTime && IS_DISABLED_CONTROL_PRESSED(control, input))
+		shouldStopSequence = true;
+
+	return;
+}
+
+void cFishingSequence::ForceStop()
+{
+	if (sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
+		return;
+
+	StopAllAnims();
+	shouldStopSequence = false;
+	sequenceState = FLUSH_ASSETS;
+	PlaySequence();
+	DeleteEntity(&item);
+	return;
+}
+
+void cFishingSequence::Update()
 {
 	if (sequenceState != FINISHED)
 	{

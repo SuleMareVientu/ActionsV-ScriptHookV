@@ -577,6 +577,38 @@ private:
 	void ForceStop();
 };
 
+class cFishingSequence : public cSequence
+{
+public:
+	void Update();
+
+	cFishingSequence() { maxStopTimer = 3500; instructionalButtonsText = genericMessage; }
+
+private:
+	enum SequenceState
+	{
+		FINISHED = SEQUENCE_FINISHED,
+		STREAM_ASSETS_IN = SEQUENCE_STREAM_ASSETS_IN,
+		INITIALIZED = SEQUENCE_INITIALIZED,
+		WAITING_FOR_ANIMATION_TO_END = SEQUENCE_WAITING_FOR_ANIMATION_TO_END,
+		FLUSH_ASSETS = SEQUENCE_FLUSH_ASSETS,
+		LOOP,
+		EXITING,
+	};
+
+	Object item = NULL;
+
+	void StopAllAnims();
+
+	void PlaySequence();
+
+	void SetState(int state);
+
+	void UpdateControls();
+
+	void ForceStop();
+};
+
 void UpdateSequences();
 
 // Sequences
@@ -595,3 +627,4 @@ extern cShineTorchSequence shineTorchSequence;
 extern cLiftCurlBarSequence liftCurlBarSequence;
 extern cBinocularsSequence binocularsSequence;
 extern cHoldBumSignSequence holdBumSignSequence;
+extern cFishingSequence fishingSequence;
