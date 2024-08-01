@@ -1,4 +1,4 @@
-# ActionsV-ScriptHookV [![License: GPL v3][GPL-3.0-shield]][GPL-3.0]
+# ActionsV-ScriptHookV [![License: GPL v3][GPL-3.0-shield]][GPL-3.0] [![GitHub all releases](https://img.shields.io/github/downloads/SuleMareVientu/ActionsV-ScriptHookV/total?label=Total%20Downloads&logo=GitHub)](https://github.com/SuleMareVientu/ActionsV-ScriptHookV/releases/latest)
 ![Screenshot](https://github.com/SuleMareVientu/ActionsV-ScriptHookV/blob/images/ActionsV.png?raw=true)  
 This mod allows you to perform various dynamic tasks, allowing the player to walk and interact with the enviroment normally while performing the action.  
 
