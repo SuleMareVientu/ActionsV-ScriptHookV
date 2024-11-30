@@ -37,14 +37,13 @@ constexpr RGBA optionTextCol = { 255, 255, 255, 255 };
 constexpr RGBA optionCountCol = { 255, 255, 255, 255 };
 constexpr RGBA selectedTextCol = { 255, 255, 255, 255 };
 constexpr RGBA selectionHighlightedCol = { 255, 255, 255, 140 };
-constexpr TextFonts fontTitle = FONT_CURSIVE, fontOptions = FONT_STANDARD, fontSelection = FONT_STANDARD;
+constexpr eTextFonts fontTitle = FONT_CURSIVE, fontOptions = FONT_STANDARD, fontSelection = FONT_STANDARD;
 constexpr float menuX = 0.125f, menuY = 0.05f, menuOptionYMult = 0.035f;
 float menuXOffset = 0.0f, menuYOffset = 0.0f, optionCoord = 0.0f, menuYStart = 0.0f;
 inline float GetMenuX() { return menuX + menuXOffset; }
 inline float GetMenuY() { return menuY + menuYOffset; }
 Vehicle playerVeh;
-
-char* menuTitle = "ActionsV";
+constexpr char* menuTitle = "ActionsV";
 
 // Booleans for loops go here:
 //bool test = 0;
@@ -62,15 +61,10 @@ void VectorToFloat(Vector3 vec, float Out[])
 	Out[2] = vec.z;
 }
 
-void DrawRect(float x, float y, float width, float height, RGBA col = whiteRGB)
-{
-	DRAW_RECT(x, y, width, height, col.R, col.G, col.B, col.A, false);
-}
+ inline void DrawRect(float x, float y, float width, float height, RGBA col = whiteRGB) { DRAW_RECT(x, y, width, height, col.R, col.G, col.B, col.A, false); }
 
-void DrawSprite(const char* textureDict, const char* textureName, float screenX, float screenY, float width, float height, float heading, RGBA col = whiteRGB)
-{
-	DRAW_SPRITE(textureDict, textureName, screenX, screenY, width, height, heading, col.R, col.G, col.B, col.A, false, NULL);
-}
+inline void DrawSprite(const char* textureDict, const char* textureName, float screenX, float screenY, float width, float height, float heading, RGBA col = whiteRGB)
+{ DRAW_SPRITE(textureDict, textureName, screenX, screenY, width, height, heading, col.R, col.G, col.B, col.A, false, NULL);	}
 
 // relativeWidth: relative width of the sprite  (0.0-1.0, 1.0 means the whole screen width)
 float GetSpriteHeight(char* txd, char* tx, float relativeWidth)
@@ -93,29 +87,10 @@ bool LoadTextureDictionary(char* txd)
 
 bool CheckPlayerInsideVehicle()
 {
-	if (IS_PED_IN_ANY_VEHICLE(PLAYER_PED_ID(), 0))
+	if (IS_PED_IN_ANY_VEHICLE(PLAYER_PED_ID(), false))
 		return true;
 
 	return false;
-}
-
-int FindFreeCarSeat(int vehicle)
-{
-	int max = GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(vehicle) - 2;
-	for (int tick = -1; tick <= max; tick++)
-	{
-		if (IS_VEHICLE_SEAT_FREE(vehicle, tick, false))
-		{
-			return tick;
-		}
-	}
-
-	return -1;
-}
-
-void GetOffsetFromEntity(Hash entity, float X, float Y, float Z, float Out[])
-{
-	VectorToFloat(GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, X, Y, Z), Out);
 }
 
 void SetTextStyle(TextStyle Style = defaultTextStyle, bool bDrawBeforeFade = false)
@@ -173,14 +148,8 @@ void DrawFloat(float text, int decimal_places, float X, float Y)
 	END_TEXT_COMMAND_DISPLAY_TEXT(X, Y, 0);
 }
 
-void PlaySoundFrontend(char* sound_dict, char* sound_name)
-{
-	PLAY_SOUND_FRONTEND(-1, sound_name, sound_dict, false);
-}
-void PlayDefaultSoundFrontend(char* sound_name)
-{
-	PLAY_SOUND_FRONTEND(-1, sound_name, "HUD_FRONTEND_DEFAULT_SOUNDSET", false);
-}
+inline void PlaySoundFrontend(char* sound_dict, char* sound_name) { PLAY_SOUND_FRONTEND(-1, sound_name, sound_dict, false); }
+inline void PlayDefaultSoundFrontend(char* sound_name) { PLAY_SOUND_FRONTEND(-1, sound_name, "HUD_FRONTEND_DEFAULT_SOUNDSET", false); }
 
 bool CheckStringLength(char* str1, size_t max_length)
 {
@@ -262,7 +231,6 @@ public:
 		HIDE_HUD_COMPONENT_THIS_FRAME(HUD_DISTRICT_NAME);
 		//DISPLAY_AMMO_THIS_FRAME(false);
 		//DISPLAY_CASH(false);
-		SET_RADAR_ZOOM(0);
 	}
 
 	static void DisableControls()
@@ -381,7 +349,7 @@ public:
 	{
 		if (Menu::currentSubmenu != SUBMENU::CLOSED)
 		{
-			char* txd = "commonmenu";
+			constexpr char* txd = "CommonMenu";
 			if (!HAS_STREAMED_TEXTURE_DICT_LOADED(txd))
 				REQUEST_STREAMED_TEXTURE_DICT(txd, false);
 

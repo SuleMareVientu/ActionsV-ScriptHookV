@@ -4,10 +4,17 @@
 
 class Timer {
 	int gameTimer = 0;
+	int offset = 0;
 public:
-	void Set(int value);
-	int Get() const;
+	void Set(const int value) { gameTimer = GET_GAME_TIMER(); offset = value; return; }
+	void Reset() { gameTimer = GET_GAME_TIMER(); offset = 0; return; }
+	int Get() const { return (GET_GAME_TIMER() - gameTimer + offset); }
+	Timer(const int startVal = 0) { offset = startVal; }
 };
+
+inline Player GetPlayer() { return PLAYER_ID(); }
+inline Ped GetPlayerPed() { return PLAYER_PED_ID(); }
+inline Vector3 GetPlayerCoords() { return GET_ENTITY_COORDS(PLAYER_PED_ID(), false); }
 
 void EnablePedConfigFlag(Ped ped, int flag);
 void DisablePedConfigFlag(Ped ped, int flag);
@@ -44,10 +51,21 @@ void AddScaleformInstructionalButton(int iButtonSlotControl, int iButtonSlotInpu
 bool SetAnimSpeed(Entity entity, const char* animDict, const char* animName, float speedMultiplier);
 void PlayAmbientSpeech(Ped ped, char* speechName);
 int GetRandomIntInRange(int startRange = 0, int endRange = 65535);
+void PlayScriptedAnim(
+	const Ped ped,
+	const char* dictionary0 = "",
+	const char* anim0 = "",
+	const float phase0 = 0.0f,
+	const float rate0 = 1.0f,
+	const float weight0 = 1.0f,
 
-#pragma region Inline
+	const int type = APT_EMPTY,
+	const int filter = 0,
+	const float blendInDelta = NORMAL_BLEND_DURATION,
+	const float blendOutDelta = NORMAL_BLEND_DURATION,
+	const int timeToPlay = -1,
+	const int flags = AF_DEFAULT,
+	const int ikFlags = AIK_NONE);
+
 inline void PlayAnimTask(Ped ped, const char* animDictionary, const char* animationName, int flag = AF_DEFAULT, float startPhase = 0.0f, float blendInSpeed = SLOW_BLEND_IN, float blendOutSpeed = SLOW_BLEND_OUT, int duration = -1)
-{
-	TASK_PLAY_ANIM(ped, animDictionary, animationName, blendInSpeed, blendOutSpeed, duration, flag, startPhase, false, false, false);
-}
-#pragma endregion
+{ TASK_PLAY_ANIM(ped, animDictionary, animationName, blendInSpeed, blendOutSpeed, duration, flag, startPhase, false, false, false); }

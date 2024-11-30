@@ -23,24 +23,19 @@ cBinocularsSequence binocularsSequence;
 cHoldBumSignSequence holdBumSignSequence;
 cFishingSequence fishingSequence;
 
-static constexpr int maxSequences = 16;
-constexpr cSequence* sequences[maxSequences] = { 
+namespace
+{
+constexpr int maxSequences = 16;
+constexpr cSequence* sequences[maxSequences] = {
 	&smokingSequence, &drinkingSequence, &leafBlowerSequence, &jogSequence, &clipboardSequence,
 	&guitarSequence, &bongosSequence, &mopSequence, &mopWithBucketSequence, &cameraSequence,
 	&mobileTextSequence, &shineTorchSequence, &liftCurlBarSequence, &binocularsSequence,
 	&holdBumSignSequence, &fishingSequence
 };
 
-static constexpr char* CORE_PTFX_ASSET = "core";
+constexpr char* CORE_PTFX_ASSET = "core";
 
-void UpdateSequences()
-{
-	LOOP(i, maxSequences)
-	{ sequences[i]->Update(); }
-	return;
-}
-
-static bool NoSequenceIsActive()
+bool NoSequenceIsActive()
 {
 	LOOP(i, maxSequences)
 	{
@@ -51,7 +46,7 @@ static bool NoSequenceIsActive()
 	return true;
 }
 
-static void StopActiveSequence()
+void StopActiveSequence()
 {
 	LOOP(i, maxSequences)
 	{
@@ -61,6 +56,9 @@ static void StopActiveSequence()
 
 	return;
 }
+}
+
+void UpdateSequences() { LOOP(i, maxSequences) { sequences[i]->Update(); } return; }
 
 #pragma region Sequence
 void cSequence::Start()
@@ -71,7 +69,7 @@ void cSequence::Start()
 		return;
 	}
 
-	if (AdditionalChecks(playerPed))
+	if (AdditionalChecks(GetPlayerPed()))
 		sequenceState = SEQUENCE_STREAM_ASSETS_IN;
 
 	return;
@@ -79,7 +77,18 @@ void cSequence::Start()
 
 void cSequence::PlayAnimAndWait(char *animDict, char *anim, int flag, int nextState, float startPhase, float blendInSpeed, float blendOutSpeed, bool standStill, int duration)
 {
-	PlayAnimTask(playerPed, animDict, anim, flag, startPhase, blendInSpeed, blendOutSpeed, duration);
+	PlayAnimTask(GetPlayerPed(), animDict, anim, flag, startPhase, blendInSpeed, blendOutSpeed, duration);
+	sequenceState = SEQUENCE_WAITING_FOR_ANIMATION_TO_END;
+	nextSequenceState = nextState;
+	shouldPlayerStandStill = standStill;
+	lastAnimDict = animDict;
+	lastAnim = anim;
+	return;
+}
+
+void cSequence::PlayScriptedAnimAndWait(const int nextState, char* animDict, char* anim, const float phase, const float rate, const float weight, const int type, const int filter, const float blendInDelta, const float blendOutDelta, const int timeToPlay, const int flags, const int ikFlags, const bool standStill)
+{
+	PlayScriptedAnim(GetPlayerPed(), animDict, anim, phase, rate, weight, type, filter, blendInDelta, blendOutDelta, timeToPlay, flags, ikFlags);
 	sequenceState = SEQUENCE_WAITING_FOR_ANIMATION_TO_END;
 	nextSequenceState = nextState;
 	shouldPlayerStandStill = standStill;
@@ -118,31 +127,31 @@ void cSequence::SetPedMovementAndReactions() const
 {
 	if (sequenceState == SEQUENCE_FLUSH_ASSETS || sequenceState == SEQUENCE_FINISHED)
 	{
-		DisablePedConfigFlag(playerPed, PCF_PhoneDisableTextingAnimations);
-		DisablePedConfigFlag(playerPed, PCF_PhoneDisableTalkingAnimations);
-		DisablePedConfigFlag(playerPed, PCF_PhoneDisableCameraAnimations);
-		SET_PED_CAN_PLAY_GESTURE_ANIMS(playerPed, true);
-		SET_PED_CAN_PLAY_AMBIENT_ANIMS(playerPed, true);
-		SET_PED_CAN_PLAY_AMBIENT_BASE_ANIMS(playerPed, true);
-		SET_PED_CAN_PLAY_AMBIENT_IDLES(playerPed, false, false);
-		SET_PED_STEALTH_MOVEMENT(playerPed, true, NULL);
-		SET_PED_USING_ACTION_MODE(playerPed, true, 0, NULL);
+		DisablePedConfigFlag(GetPlayerPed(), PCF_PhoneDisableTextingAnimations);
+		DisablePedConfigFlag(GetPlayerPed(), PCF_PhoneDisableTalkingAnimations);
+		DisablePedConfigFlag(GetPlayerPed(), PCF_PhoneDisableCameraAnimations);
+		SET_PED_CAN_PLAY_GESTURE_ANIMS(GetPlayerPed(), true);
+		SET_PED_CAN_PLAY_AMBIENT_ANIMS(GetPlayerPed(), true);
+		SET_PED_CAN_PLAY_AMBIENT_BASE_ANIMS(GetPlayerPed(), true);
+		SET_PED_CAN_PLAY_AMBIENT_IDLES(GetPlayerPed(), false, false);
+		SET_PED_STEALTH_MOVEMENT(GetPlayerPed(), true, NULL);
+		SET_PED_USING_ACTION_MODE(GetPlayerPed(), true, 0, NULL);
 	}
 	else
 	{
 		if (disableFirstPersonView)
 			DISABLE_ON_FOOT_FIRST_PERSON_VIEW_THIS_UPDATE();
 
-		EnablePedResetFlag(playerPed, PRF_DisableSecondaryAnimationTasks);
-		EnablePedConfigFlag(playerPed, PCF_PhoneDisableTextingAnimations);
-		EnablePedConfigFlag(playerPed, PCF_PhoneDisableTalkingAnimations);
-		EnablePedConfigFlag(playerPed, PCF_PhoneDisableCameraAnimations);
-		SET_PED_CAN_PLAY_GESTURE_ANIMS(playerPed, false);
-		SET_PED_CAN_PLAY_AMBIENT_ANIMS(playerPed, false);
-		SET_PED_CAN_PLAY_AMBIENT_BASE_ANIMS(playerPed, false);
-		SET_PED_CAN_PLAY_AMBIENT_IDLES(playerPed, true, true);
-		SET_PED_STEALTH_MOVEMENT(playerPed, false, NULL);
-		SET_PED_USING_ACTION_MODE(playerPed, false, -1, NULL);
+		EnablePedResetFlag(GetPlayerPed(), PRF_DisableSecondaryAnimationTasks);
+		EnablePedConfigFlag(GetPlayerPed(), PCF_PhoneDisableTextingAnimations);
+		EnablePedConfigFlag(GetPlayerPed(), PCF_PhoneDisableTalkingAnimations);
+		EnablePedConfigFlag(GetPlayerPed(), PCF_PhoneDisableCameraAnimations);
+		SET_PED_CAN_PLAY_GESTURE_ANIMS(GetPlayerPed(), false);
+		SET_PED_CAN_PLAY_AMBIENT_ANIMS(GetPlayerPed(), false);
+		SET_PED_CAN_PLAY_AMBIENT_BASE_ANIMS(GetPlayerPed(), false);
+		SET_PED_CAN_PLAY_AMBIENT_IDLES(GetPlayerPed(), true, true);
+		SET_PED_STEALTH_MOVEMENT(GetPlayerPed(), false, NULL);
+		SET_PED_USING_ACTION_MODE(GetPlayerPed(), false, -1, NULL);
 	}
 	return;
 }
@@ -174,9 +183,9 @@ static constexpr char* ANM_CIG_EXHALE_NSE_CAR = "ent_anim_cig_exhale_nse_car";
 
 void cSmokingSequence::StopAllAnims()
 {
-	StopAnimTask(playerPed, smokeEnterAnimDict, smokeEnterAnim);
-	StopAnimTask(playerPed, smokeBaseAnimDict, smokeBaseAnim);
-	StopAnimTask(playerPed, smokeExitAnimDict, smokeExitAnim);
+	StopAnimTask(GetPlayerPed(), smokeEnterAnimDict, smokeEnterAnim);
+	StopAnimTask(GetPlayerPed(), smokeBaseAnimDict, smokeBaseAnim);
+	StopAnimTask(GetPlayerPed(), smokeExitAnimDict, smokeExitAnim);
 	REMOVE_ANIM_DICT(smokeEnterAnimDict);
 	REMOVE_ANIM_DICT(smokeBaseAnimDict);
 	REMOVE_ANIM_DICT(smokeExitAnimDict);
@@ -203,23 +212,23 @@ void cSmokingSequence::PlayPTFX()
 		return;
 
 	// offsets can be found inside scenarios
-	const float enterAnimTime = GET_ENTITY_ANIM_CURRENT_TIME(playerPed, smokeEnterAnimDict, smokeEnterAnim);
+	const float enterAnimTime = GET_ENTITY_ANIM_CURRENT_TIME(GetPlayerPed(), smokeEnterAnimDict, smokeEnterAnim);
 	if (enterAnimTime >= 0.4826087f && cigarettePTFXHandle == NULL)
-		cigarettePTFXHandle = StartParticleFxLoopedOnPedBone(CORE_PTFX_ASSET, ANM_CIG_SMOKE, playerPed, BONETAG_PH_R_HAND, 1.0f, -0.08f);
+		cigarettePTFXHandle = StartParticleFxLoopedOnPedBone(CORE_PTFX_ASSET, ANM_CIG_SMOKE, GetPlayerPed(), BONETAG_PH_R_HAND, 1.0f, -0.08f);
 
-	const float baseAnimTime = GET_ENTITY_ANIM_CURRENT_TIME(playerPed, smokeBaseAnimDict, smokeBaseAnim);
+	const float baseAnimTime = GET_ENTITY_ANIM_CURRENT_TIME(GetPlayerPed(), smokeBaseAnimDict, smokeBaseAnim);
 	if (baseAnimTime < 0.7965517f)
 		hasExhaledNose = NULL;
 
 	if (baseAnimTime >= 0.7965517f && hasExhaledNose == NULL)
-		hasExhaledNose = StartParticleFxNonLoopedOnPedBone(CORE_PTFX_ASSET, ANM_CIG_EXHALE_NSE, playerPed, BONETAG_HEAD, 1.0f, 0.02f, 0.16f);
+		hasExhaledNose = StartParticleFxNonLoopedOnPedBone(CORE_PTFX_ASSET, ANM_CIG_EXHALE_NSE, GetPlayerPed(), BONETAG_HEAD, 1.0f, 0.02f, 0.16f);
 
 	return;
 }
 
 void cSmokingSequence::PlaySequence()
 {
-	const int rightHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_R_HAND);
+	const int rightHandID = GET_PED_BONE_INDEX(GetPlayerPed(), BONETAG_PH_R_HAND);
 
 	SetPlayerControls(); //Player control should be disabled here and not during the sequence
 
@@ -228,25 +237,35 @@ void cSmokingSequence::PlaySequence()
 	case INITIALIZED:
 		item = CreateObject(cigaretteHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
-		ATTACH_ENTITY_TO_ENTITY(item, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
-		PlayAnimTask(playerPed, smokeEnterAnimDict, smokeEnterAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME);
+		ATTACH_ENTITY_TO_ENTITY(item, GetPlayerPed(), rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+		PlayScriptedAnim(GetPlayerPed(), smokeEnterAnimDict, smokeEnterAnim, 0.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, BONEMASK_HEAD_NECK_AND_R_ARM, 0.5f, NORMAL_BLEND_DURATION, -1, upperSecondaryAF | AF_HOLD_LAST_FRAME);
 		sequenceState = ENTER_SMOKE;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
-			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(GetPlayerPed(), lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 		break;
 	case ENTER_SMOKE:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, smokeEnterAnimDict, smokeEnterAnim, 3))
-			PlayAnimTask(playerPed, smokeEnterAnimDict, smokeEnterAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME);
+		if (GET_ENTITY_ANIM_CURRENT_TIME(GetPlayerPed(), smokeEnterAnimDict, smokeEnterAnim) == 1.0f && !releasedArmAnim)
+		{
+			releasedArmAnim = true;
+			PlayScriptedAnim(GetPlayerPed(), smokeEnterAnimDict, smokeEnterAnim, 1.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, FILTER_GRIP_R_ONLY, NORMAL_BLEND_DURATION, NORMAL_BLEND_DURATION, -1, upperSecondaryAF | AF_HOLD_LAST_FRAME);
+		}
+		else if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), smokeEnterAnimDict, smokeEnterAnim, 3))
+			PlayScriptedAnim(GetPlayerPed(), smokeEnterAnimDict, smokeEnterAnim, 0.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, BONEMASK_HEAD_NECK_AND_R_ARM, 0.5f, NORMAL_BLEND_DURATION, -1, upperSecondaryAF | AF_HOLD_LAST_FRAME);
 		break;
 	case SMOKE:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, smokeBaseAnimDict, smokeBaseAnim, 3))
-			PlayAnimTask(playerPed, smokeBaseAnimDict, smokeBaseAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, 0.388f);
+		if (GET_ENTITY_ANIM_CURRENT_TIME(GetPlayerPed(), smokeBaseAnimDict, smokeBaseAnim) == 1.0f && !releasedArmAnim)
+		{
+			releasedArmAnim = true;
+			PlayScriptedAnim(GetPlayerPed(), smokeBaseAnimDict, smokeBaseAnim, 1.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, FILTER_GRIP_R_ONLY, NORMAL_BLEND_DURATION, NORMAL_BLEND_DURATION, -1, upperSecondaryAF | AF_HOLD_LAST_FRAME);
+		}
+		else if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), smokeBaseAnimDict, smokeBaseAnim, 3))
+			PlayScriptedAnim(GetPlayerPed(), smokeBaseAnimDict, smokeBaseAnim, 0.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, BONEMASK_HEAD_NECK_AND_R_ARM, 0.5f, NORMAL_BLEND_DURATION, -1, upperSecondaryAF | AF_HOLD_LAST_FRAME);
 		break;
 	case EXITING:
-		PlayAnimAndWait(smokeExitAnimDict, smokeExitAnim, upperSecondaryAF, FLUSH_ASSETS);
+		PlayScriptedAnimAndWait(FLUSH_ASSETS, smokeExitAnimDict, smokeExitAnim, 0.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, BONEMASK_HEAD_NECK_AND_R_ARM, NORMAL_BLEND_DURATION, NORMAL_BLEND_DURATION, -1, upperSecondaryAF);
 		break;
 	case FLUSH_ASSETS:
 		DeleteEntity(&item);
@@ -267,6 +286,7 @@ void cSmokingSequence::PlaySequence()
 			lastAnimDict = NULL;
 			lastAnim = NULL;
 			item = NULL;
+			releasedArmAnim = false;
 		}
 		break;
 	}
@@ -281,12 +301,12 @@ void cSmokingSequence::PlaySequence()
 
 bool cSmokingSequence::GetAnimHold(char** animDict, char** anim)
 {
-	if (HAS_ENTITY_ANIM_FINISHED(playerPed, smokeEnterAnimDict, smokeEnterAnim, 3))
+	if (HAS_ENTITY_ANIM_FINISHED(GetPlayerPed(), smokeEnterAnimDict, smokeEnterAnim, 3))
 	{
 		*animDict = smokeEnterAnimDict;
 		*anim = smokeEnterAnim;
 	}
-	else if (HAS_ENTITY_ANIM_FINISHED(playerPed, smokeBaseAnimDict, smokeBaseAnim, 3))
+	else if (HAS_ENTITY_ANIM_FINISHED(GetPlayerPed(), smokeBaseAnimDict, smokeBaseAnim, 3))
 	{
 		*animDict = smokeBaseAnimDict;
 		*anim = smokeBaseAnim;
@@ -303,7 +323,7 @@ void cSmokingSequence::SetState(int state)
 	if (!GetAnimHold(&animDict, &anim))
 		return;
 
-	StopAnimTask(playerPed, animDict, anim);
+	StopAnimTask(GetPlayerPed(), animDict, anim);
 
 	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
 		sequenceState = EXITING;
@@ -330,14 +350,17 @@ void cSmokingSequence::UpdateControls()
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
-		controlTimer.Set(0);
+		controlTimer.Reset();
 		return;
 	}
 
 	if (controlTimer.Get() < holdTime)
 	{
 		if (IS_DISABLED_CONTROL_JUST_RELEASED(control, input))
+		{
 			SetState(SMOKE);
+			releasedArmAnim = false;
+		}
 	}
 	else if (IS_DISABLED_CONTROL_PRESSED(control, input))
 		shouldStopSequence = true;
@@ -363,7 +386,7 @@ void cSmokingSequence::Update()
 {
 	if (sequenceState != FINISHED)
 	{
-		if (!AdditionalChecks(playerPed))
+		if (!AdditionalChecks(GetPlayerPed()))
 		{
 			ForceStop();
 			return;
@@ -381,7 +404,7 @@ void cSmokingSequence::Update()
 			SetState(EXITING);
 		}
 		else
-			stopTimer.Set(0);
+			stopTimer.Reset();
 
 		UpdateControls();
 		return;
@@ -403,16 +426,16 @@ static constexpr char* drinkingExitAnim = "outro_bottle";
 
 void cDrinkingSequence::StopAllAnims()
 {
-	StopAnimTask(playerPed, drinkingAnimDict, drinkingEnterAnim);
-	StopAnimTask(playerPed, drinkingAnimDict, drinkingBaseAnim);
-	StopAnimTask(playerPed, drinkingAnimDict, drinkingExitAnim);
+	StopAnimTask(GetPlayerPed(), drinkingAnimDict, drinkingEnterAnim);
+	StopAnimTask(GetPlayerPed(), drinkingAnimDict, drinkingBaseAnim);
+	StopAnimTask(GetPlayerPed(), drinkingAnimDict, drinkingExitAnim);
 	REMOVE_ANIM_DICT(drinkingAnimDict);
 	return;
 }
 
 void cDrinkingSequence::PlaySequence()
 {
-	const int leftHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_L_HAND);
+	const int leftHandID = GET_PED_BONE_INDEX(GetPlayerPed(), BONETAG_PH_L_HAND);
 
 	SetPlayerControls(); //Player control should be disabled here and not during the sequence
 
@@ -421,15 +444,15 @@ void cDrinkingSequence::PlaySequence()
 	case INITIALIZED:
 		item = CreateObject(beerHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
-		ATTACH_ENTITY_TO_ENTITY(item, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+		ATTACH_ENTITY_TO_ENTITY(item, GetPlayerPed(), leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 		PlayAnimAndWait(drinkingAnimDict, drinkingEnterAnim, upperSecondaryAF, DRINK, 0.35f, SLOW_BLEND_IN, SLOWEST_BLEND_OUT);
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
-			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(GetPlayerPed(), lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 
-		SetAnimSpeed(playerPed, drinkingAnimDict, drinkingEnterAnim, 0.7f);
+		SetAnimSpeed(GetPlayerPed(), drinkingAnimDict, drinkingEnterAnim, 0.7f);
 		break;
 	case ENTER_DRINK:
 		PlayAnimAndWait(drinkingAnimDict, drinkingEnterAnim, upperSecondaryAF, DRINK, 0.35f, SLOW_BLEND_IN, SLOWEST_BLEND_OUT);
@@ -438,8 +461,8 @@ void cDrinkingSequence::PlaySequence()
 		PlayAnimAndWait(drinkingAnimDict, drinkingBaseAnim, upperSecondaryAF, HOLD, 0.0f, FAST_BLEND_IN, SLOWEST_BLEND_OUT);
 		break;
 	case HOLD:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, drinkingAnimDict, drinkingExitAnim, 3))
-			PlayAnimTask(playerPed, drinkingAnimDict, drinkingExitAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME);
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), drinkingAnimDict, drinkingExitAnim, 3))
+			PlayAnimTask(GetPlayerPed(), drinkingAnimDict, drinkingExitAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME);
 		break;
 	case EXITING:
 		StopAllAnims();
@@ -473,7 +496,7 @@ void cDrinkingSequence::PlaySequence()
 
 bool cDrinkingSequence::GetAnimHold(char** animDict, char** anim)
 {
-	if (HAS_ENTITY_ANIM_FINISHED(playerPed, drinkingAnimDict, drinkingExitAnim, 3))
+	if (HAS_ENTITY_ANIM_FINISHED(GetPlayerPed(), drinkingAnimDict, drinkingExitAnim, 3))
 	{
 		*animDict = drinkingAnimDict;
 		*anim = drinkingExitAnim;
@@ -515,7 +538,7 @@ void cDrinkingSequence::UpdateControls()
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
-		controlTimer.Set(0);
+		controlTimer.Reset();
 		return;
 	}
 
@@ -547,7 +570,7 @@ void cDrinkingSequence::Update()
 {
 	if (sequenceState != FINISHED)
 	{
-		if (!AdditionalChecks(playerPed))
+		if (!AdditionalChecks(GetPlayerPed()))
 		{
 			ForceStop();
 			return;
@@ -565,7 +588,7 @@ void cDrinkingSequence::Update()
 			SetState(EXITING);
 		}
 		else
-			stopTimer.Set(0);
+			stopTimer.Reset();
 
 		UpdateControls();
 		return;
@@ -606,16 +629,16 @@ void cLeafBlowerSequence::PlayPTFXAndSound()
 
 	if (!DOES_PARTICLE_FX_LOOPED_EXIST(leafBlowerPTFXHandle) && isUsingLeafBlower)
 	{
-		leafBlowerPTFXHandle = StartParticleFxLoopedOnPedBone(CORE_PTFX_ASSET, ANM_LEAF_BLOWER, playerPed, BONETAG_PH_R_HAND, 1.0f, 0.9f, 0.0f, -0.25f);
+		leafBlowerPTFXHandle = StartParticleFxLoopedOnPedBone(CORE_PTFX_ASSET, ANM_LEAF_BLOWER, GetPlayerPed(), BONETAG_PH_R_HAND, 1.0f, 0.9f, 0.0f, -0.25f);
 		soundID = GET_SOUND_ID();
-		PLAY_SOUND_FROM_ENTITY(soundID, leafBlowerSound, playerPed, NULL, false, 0);
+		PLAY_SOUND_FROM_ENTITY(soundID, leafBlowerSound, GetPlayerPed(), NULL, false, 0);
 	}
 	return;
 }
 
 void cLeafBlowerSequence::PlaySequence()
 {
-	const int rightHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_R_HAND);
+	const int rightHandID = GET_PED_BONE_INDEX(GetPlayerPed(), BONETAG_PH_R_HAND);
 
 	SetPlayerControls(); //Player control should be disabled here and not during the sequence
 
@@ -624,21 +647,21 @@ void cLeafBlowerSequence::PlaySequence()
 	case INITIALIZED:
 		item = CreateObject(leafBlowerHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
-		ATTACH_ENTITY_TO_ENTITY(item, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
-		SET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed, leafBlowerClipSet);
-		TASK_LOOK_AT_ENTITY(playerPed, item, -1, SLF_NARROW_YAW_LIMIT | SLF_NARROW_PITCH_LIMIT | SLF_SLOW_TURN_RATE, 2);
+		ATTACH_ENTITY_TO_ENTITY(item, GetPlayerPed(), rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+		SET_PED_WEAPON_MOVEMENT_CLIPSET(GetPlayerPed(), leafBlowerClipSet);
+		TASK_LOOK_AT_ENTITY(GetPlayerPed(), item, -1, SLF_NARROW_YAW_LIMIT | SLF_NARROW_PITCH_LIMIT | SLF_SLOW_TURN_RATE, 2);
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
-			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(GetPlayerPed(), lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 		break;
 	case LOOP:
 		break;
 	case EXITING:
-		RESET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed);
-		TASK_CLEAR_LOOK_AT(playerPed);
+		RESET_PED_WEAPON_MOVEMENT_CLIPSET(GetPlayerPed());
+		TASK_CLEAR_LOOK_AT(GetPlayerPed());
 		sequenceState = FLUSH_ASSETS;
 		break;
 	case FLUSH_ASSETS:
@@ -696,7 +719,7 @@ void cLeafBlowerSequence::UpdateControls()
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
-		controlTimer.Set(0);
+		controlTimer.Reset();
 		return;
 	}
 
@@ -716,8 +739,8 @@ void cLeafBlowerSequence::ForceStop()
 	if (sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
 		return;
 
-	RESET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed);
-	TASK_CLEAR_LOOK_AT(playerPed);
+	RESET_PED_WEAPON_MOVEMENT_CLIPSET(GetPlayerPed());
+	TASK_CLEAR_LOOK_AT(GetPlayerPed());
 	StopAllPTFXAndSounds();
 	shouldStopSequence = false;
 	sequenceState = FLUSH_ASSETS;
@@ -730,7 +753,7 @@ void cLeafBlowerSequence::Update()
 {
 	if (sequenceState != FINISHED)
 	{
-		if (!AdditionalChecks(playerPed))
+		if (!AdditionalChecks(GetPlayerPed()))
 		{
 			ForceStop();
 			return;
@@ -748,7 +771,7 @@ void cLeafBlowerSequence::Update()
 			SetState(EXITING);
 		}	
 		else
-			stopTimer.Set(0);
+			stopTimer.Reset();
 
 		UpdateControls();
 		return;
@@ -773,20 +796,20 @@ void cJogSequence::PlaySequence()
 	switch (sequenceState)
 	{
 	case INITIALIZED:
-		SET_PED_ALTERNATE_MOVEMENT_ANIM(playerPed, AAT_IDLE, joggerAnimDict, joggerIdleAnim, 8.0f, true);
-		SET_PED_ALTERNATE_MOVEMENT_ANIM(playerPed, AAT_WALK, joggerAnimDict, joggerRunAnim, 8.0f, true);
+		SET_PED_ALTERNATE_MOVEMENT_ANIM(GetPlayerPed(), AAT_IDLE, joggerAnimDict, joggerIdleAnim, 8.0f, true);
+		SET_PED_ALTERNATE_MOVEMENT_ANIM(GetPlayerPed(), AAT_WALK, joggerAnimDict, joggerRunAnim, 8.0f, true);
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
-			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(GetPlayerPed(), lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 		break;
 	case LOOP:
 		break;
 	case EXITING:
-		CLEAR_PED_ALTERNATE_MOVEMENT_ANIM(playerPed, AAT_IDLE, 8.0f);
-		CLEAR_PED_ALTERNATE_MOVEMENT_ANIM(playerPed, AAT_WALK, 8.0f);
+		CLEAR_PED_ALTERNATE_MOVEMENT_ANIM(GetPlayerPed(), AAT_IDLE, 8.0f);
+		CLEAR_PED_ALTERNATE_MOVEMENT_ANIM(GetPlayerPed(), AAT_WALK, 8.0f);
 		sequenceState = FLUSH_ASSETS;
 		break;
 	case FLUSH_ASSETS:
@@ -834,7 +857,7 @@ void cJogSequence::UpdateControls()
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
-		controlTimer.Set(0);
+		controlTimer.Reset();
 		return;
 	}
 
@@ -849,8 +872,8 @@ void cJogSequence::ForceStop()
 	if (sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
 		return;
 
-	CLEAR_PED_ALTERNATE_MOVEMENT_ANIM(playerPed, AAT_IDLE, 8.0f);
-	CLEAR_PED_ALTERNATE_MOVEMENT_ANIM(playerPed, AAT_WALK, 8.0f);
+	CLEAR_PED_ALTERNATE_MOVEMENT_ANIM(GetPlayerPed(), AAT_IDLE, 8.0f);
+	CLEAR_PED_ALTERNATE_MOVEMENT_ANIM(GetPlayerPed(), AAT_WALK, 8.0f);
 	shouldStopSequence = false;
 	sequenceState = FLUSH_ASSETS;
 	PlaySequence();
@@ -861,7 +884,7 @@ void cJogSequence::Update()
 {
 	if (sequenceState != FINISHED)
 	{
-		if (!AdditionalChecks(playerPed))
+		if (!AdditionalChecks(GetPlayerPed()))
 		{
 			ForceStop();
 			return;
@@ -879,7 +902,7 @@ void cJogSequence::Update()
 			SetState(EXITING);
 		}
 		else
-			stopTimer.Set(0);
+			stopTimer.Reset();
 
 		UpdateControls();
 		return;
@@ -897,7 +920,7 @@ static constexpr char* clipboardClipSet = "move_m@clipboard";
 
 void cClipboardSequence::PlaySequence()
 {
-	const int leftHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_L_HAND);
+	const int leftHandID = GET_PED_BONE_INDEX(GetPlayerPed(), BONETAG_PH_L_HAND);
 
 	SetPlayerControls(); //Player control should be disabled here and not during the sequence
 
@@ -906,21 +929,21 @@ void cClipboardSequence::PlaySequence()
 	case INITIALIZED:
 		item = CreateObject(clipboardHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
-		ATTACH_ENTITY_TO_ENTITY(item, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
-		SET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed, clipboardClipSet);
-		TASK_LOOK_AT_ENTITY(playerPed, item, -1, SLF_NARROW_YAW_LIMIT | SLF_NARROW_PITCH_LIMIT | SLF_SLOW_TURN_RATE, 2);
+		ATTACH_ENTITY_TO_ENTITY(item, GetPlayerPed(), leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+		SET_PED_WEAPON_MOVEMENT_CLIPSET(GetPlayerPed(), clipboardClipSet);
+		TASK_LOOK_AT_ENTITY(GetPlayerPed(), item, -1, SLF_NARROW_YAW_LIMIT | SLF_NARROW_PITCH_LIMIT | SLF_SLOW_TURN_RATE, 2);
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
-			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(GetPlayerPed(), lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 		break;
 	case LOOP:
 		break;
 	case EXITING:
-		RESET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed);
-		TASK_CLEAR_LOOK_AT(playerPed);
+		RESET_PED_WEAPON_MOVEMENT_CLIPSET(GetPlayerPed());
+		TASK_CLEAR_LOOK_AT(GetPlayerPed());
 		sequenceState = FLUSH_ASSETS;
 		break;
 	case FLUSH_ASSETS:
@@ -972,7 +995,7 @@ void cClipboardSequence::UpdateControls()
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
-		controlTimer.Set(0);
+		controlTimer.Reset();
 		return;
 	}
 
@@ -987,8 +1010,8 @@ void cClipboardSequence::ForceStop()
 	if (sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
 		return;
 
-	RESET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed);
-	TASK_CLEAR_LOOK_AT(playerPed);
+	RESET_PED_WEAPON_MOVEMENT_CLIPSET(GetPlayerPed());
+	TASK_CLEAR_LOOK_AT(GetPlayerPed());
 	shouldStopSequence = false;
 	sequenceState = FLUSH_ASSETS;
 	PlaySequence();
@@ -1000,7 +1023,7 @@ void cClipboardSequence::Update()
 {
 	if (sequenceState != FINISHED)
 	{
-		if (!AdditionalChecks(playerPed))
+		if (!AdditionalChecks(GetPlayerPed()))
 		{
 			ForceStop();
 			return;
@@ -1018,7 +1041,7 @@ void cClipboardSequence::Update()
 			SetState(EXITING);
 		}
 		else
-			stopTimer.Set(0);
+			stopTimer.Reset();
 
 		UpdateControls();
 		return;
@@ -1039,14 +1062,14 @@ static constexpr char* guitarStream = "hash_80dc636b_biknqys_collision";
 
 void cGuitarSequence::StopAllAnims()
 {
-	StopAnimTask(playerPed, guitarAnimDict, guitarBaseAnim);
+	StopAnimTask(GetPlayerPed(), guitarAnimDict, guitarBaseAnim);
 	REMOVE_ANIM_DICT(guitarAnimDict);
 	return;
 }
 
 void cGuitarSequence::PlaySequence()
 {
-	const int leftHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_L_HAND);
+	const int leftHandID = GET_PED_BONE_INDEX(GetPlayerPed(), BONETAG_PH_L_HAND);
 
 	SetPlayerControls(); //Player control should be disabled here and not during the sequence
 
@@ -1056,20 +1079,20 @@ void cGuitarSequence::PlaySequence()
 		StopAudioStream();
 		item = CreateObject(guitarHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
-		ATTACH_ENTITY_TO_ENTITY(item, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
-		PlayAnimTask(playerPed, guitarAnimDict, guitarBaseAnim, upperSecondaryAF | AF_LOOPING);
+		ATTACH_ENTITY_TO_ENTITY(item, GetPlayerPed(), leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+		PlayAnimTask(GetPlayerPed(), guitarAnimDict, guitarBaseAnim, upperSecondaryAF | AF_LOOPING);
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
-			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(GetPlayerPed(), lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 		break;
 	case LOOP:
 		if (!IS_STREAM_PLAYING())
 		{
 			if (LOAD_STREAM(guitarStream, NULL))
-				PLAY_STREAM_FROM_PED(playerPed);
+				PLAY_STREAM_FROM_PED(GetPlayerPed());
 		}
 		break;
 	case EXITING:
@@ -1105,7 +1128,7 @@ void cGuitarSequence::PlaySequence()
 
 void cGuitarSequence::SetState(int state)
 {
-	StopAnimTask(playerPed, guitarAnimDict, guitarBaseAnim);
+	StopAnimTask(GetPlayerPed(), guitarAnimDict, guitarBaseAnim);
 
 	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
 		sequenceState = EXITING;
@@ -1128,7 +1151,7 @@ void cGuitarSequence::UpdateControls()
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
-		controlTimer.Set(0);
+		controlTimer.Reset();
 		return;
 	}
 
@@ -1156,7 +1179,7 @@ void cGuitarSequence::Update()
 {
 	if (sequenceState != FINISHED)
 	{
-		if (!AdditionalChecks(playerPed))
+		if (!AdditionalChecks(GetPlayerPed()))
 		{
 			ForceStop();
 			return;
@@ -1174,7 +1197,7 @@ void cGuitarSequence::Update()
 			SetState(EXITING);
 		}
 		else
-			stopTimer.Set(0);
+			stopTimer.Reset();
 
 		UpdateControls();
 		return;
@@ -1194,14 +1217,14 @@ static constexpr char* bongosStream = "hash_a38bad80_zvulbdw_collision";
 
 void cBongosSequence::StopAllAnims()
 {
-	StopAnimTask(playerPed, bongosAnimDict, bongosBaseAnim);
+	StopAnimTask(GetPlayerPed(), bongosAnimDict, bongosBaseAnim);
 	REMOVE_ANIM_DICT(bongosAnimDict);
 	return;
 }
 
 void cBongosSequence::PlaySequence()
 {
-	const int leftHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_L_HAND);
+	const int leftHandID = GET_PED_BONE_INDEX(GetPlayerPed(), BONETAG_PH_L_HAND);
 
 	SetPlayerControls(); //Player control should be disabled here and not during the sequence
 
@@ -1211,20 +1234,20 @@ void cBongosSequence::PlaySequence()
 		StopAudioStream();
 		item = CreateObject(bongosHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
-		ATTACH_ENTITY_TO_ENTITY(item, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
-		PlayAnimTask(playerPed, bongosAnimDict, bongosBaseAnim, upperSecondaryAF | AF_LOOPING);
+		ATTACH_ENTITY_TO_ENTITY(item, GetPlayerPed(), leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+		PlayAnimTask(GetPlayerPed(), bongosAnimDict, bongosBaseAnim, upperSecondaryAF | AF_LOOPING);
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
-			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(GetPlayerPed(), lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 		break;
 	case LOOP:
 		if (!IS_STREAM_PLAYING())
 		{
 			if (LOAD_STREAM(bongosStream, NULL))
-				PLAY_STREAM_FROM_PED(playerPed);
+				PLAY_STREAM_FROM_PED(GetPlayerPed());
 		}
 		break;
 	case EXITING:
@@ -1260,7 +1283,7 @@ void cBongosSequence::PlaySequence()
 
 void cBongosSequence::SetState(int state)
 {
-	StopAnimTask(playerPed, bongosAnimDict, bongosBaseAnim);
+	StopAnimTask(GetPlayerPed(), bongosAnimDict, bongosBaseAnim);
 
 	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
 		sequenceState = EXITING;
@@ -1283,7 +1306,7 @@ void cBongosSequence::UpdateControls()
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
-		controlTimer.Set(0);
+		controlTimer.Reset();
 		return;
 	}
 
@@ -1311,7 +1334,7 @@ void cBongosSequence::Update()
 {
 	if (sequenceState != FINISHED)
 	{
-		if (!AdditionalChecks(playerPed))
+		if (!AdditionalChecks(GetPlayerPed()))
 		{
 			ForceStop();
 			return;
@@ -1329,7 +1352,7 @@ void cBongosSequence::Update()
 			SetState(EXITING);
 		}
 		else
-			stopTimer.Set(0);
+			stopTimer.Reset();
 
 		UpdateControls();
 		return;
@@ -1349,7 +1372,7 @@ static constexpr char* mopIdleAnim = "mop_idle";
 
 void cMopSequence::PlaySequence()
 {
-	const int leftHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_L_HAND);
+	const int leftHandID = GET_PED_BONE_INDEX(GetPlayerPed(), BONETAG_PH_L_HAND);
 
 	SetPlayerControls(); //Player control should be disabled here and not during the sequence
 
@@ -1358,21 +1381,21 @@ void cMopSequence::PlaySequence()
 	case INITIALIZED:
 		item = CreateObject(mopHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
-		ATTACH_ENTITY_TO_ENTITY(item, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+		ATTACH_ENTITY_TO_ENTITY(item, GetPlayerPed(), leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 		PLAY_ENTITY_ANIM(item, mopIdleAnim, fibJanitorAnimDict, INSTANT_BLEND_IN, true, false, false, 0.0f, NULL);
 
-		SET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed, mopClipSet);
+		SET_PED_WEAPON_MOVEMENT_CLIPSET(GetPlayerPed(), mopClipSet);
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
-			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(GetPlayerPed(), lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 		break;
 	case LOOP:
 		break;
 	case EXITING:
-		RESET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed);
+		RESET_PED_WEAPON_MOVEMENT_CLIPSET(GetPlayerPed());
 		sequenceState = FLUSH_ASSETS;
 		break;
 	case FLUSH_ASSETS:
@@ -1425,7 +1448,7 @@ void cMopSequence::UpdateControls()
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
-		controlTimer.Set(0);
+		controlTimer.Reset();
 		return;
 	}
 
@@ -1440,7 +1463,7 @@ void cMopSequence::ForceStop()
 	if (sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
 		return;
 
-	RESET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed);
+	RESET_PED_WEAPON_MOVEMENT_CLIPSET(GetPlayerPed());
 	shouldStopSequence = false;
 	sequenceState = FLUSH_ASSETS;
 	PlaySequence();
@@ -1452,7 +1475,7 @@ void cMopSequence::Update()
 {
 	if (sequenceState != FINISHED)
 	{
-		if (!AdditionalChecks(playerPed))
+		if (!AdditionalChecks(GetPlayerPed()))
 		{
 			ForceStop();
 			return;
@@ -1470,7 +1493,7 @@ void cMopSequence::Update()
 			SetState(EXITING);
 		}
 		else
-			stopTimer.Set(0);
+			stopTimer.Reset();
 
 		UpdateControls();
 		return;
@@ -1489,8 +1512,8 @@ static constexpr char* bucketIdleAnim = "bucket_idle";
 
 void cMopWithBucketSequence::PlaySequence()
 {
-	const int rightHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_R_HAND);
-	const int leftHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_L_HAND);
+	const int rightHandID = GET_PED_BONE_INDEX(GetPlayerPed(), BONETAG_PH_R_HAND);
+	const int leftHandID = GET_PED_BONE_INDEX(GetPlayerPed(), BONETAG_PH_L_HAND);
 
 	SetPlayerControls(); //Player control should be disabled here and not during the sequence
 
@@ -1499,26 +1522,26 @@ void cMopWithBucketSequence::PlaySequence()
 	case INITIALIZED:
 		bucket = CreateObject(bucketHash);
 		SET_ENTITY_AS_MISSION_ENTITY(bucket, false, true);
-		ATTACH_ENTITY_TO_ENTITY(bucket, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+		ATTACH_ENTITY_TO_ENTITY(bucket, GetPlayerPed(), rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 		PLAY_ENTITY_ANIM(bucket, bucketIdleAnim, fibJanitorAnimDict, INSTANT_BLEND_IN, true, false, false, 0.0f, NULL);
 
 		mop = CreateObject(mopHash);
 		SET_ENTITY_AS_MISSION_ENTITY(mop, false, true);
-		ATTACH_ENTITY_TO_ENTITY(mop, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+		ATTACH_ENTITY_TO_ENTITY(mop, GetPlayerPed(), leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 		PLAY_ENTITY_ANIM(mop, mopIdleAnim, fibJanitorAnimDict, INSTANT_BLEND_IN, true, false, false, 0.0f, NULL);
 
-		SET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed, bucketClipSet);
+		SET_PED_WEAPON_MOVEMENT_CLIPSET(GetPlayerPed(), bucketClipSet);
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
-			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(GetPlayerPed(), lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 		break;
 	case LOOP:
 		break;
 	case EXITING:
-		RESET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed);
+		RESET_PED_WEAPON_MOVEMENT_CLIPSET(GetPlayerPed());
 		sequenceState = FLUSH_ASSETS;
 		break;
 	case FLUSH_ASSETS:
@@ -1577,7 +1600,7 @@ void cMopWithBucketSequence::UpdateControls()
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
-		controlTimer.Set(0);
+		controlTimer.Reset();
 		return;
 	}
 
@@ -1592,7 +1615,7 @@ void cMopWithBucketSequence::ForceStop()
 	if (sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
 		return;
 
-	RESET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed);
+	RESET_PED_WEAPON_MOVEMENT_CLIPSET(GetPlayerPed());
 	shouldStopSequence = false;
 	sequenceState = FLUSH_ASSETS;
 	PlaySequence();
@@ -1605,7 +1628,7 @@ void cMopWithBucketSequence::Update()
 {
 	if (sequenceState != FINISHED)
 	{
-		if (!AdditionalChecks(playerPed))
+		if (!AdditionalChecks(GetPlayerPed()))
 		{
 			ForceStop();
 			return;
@@ -1623,7 +1646,7 @@ void cMopWithBucketSequence::Update()
 			SetState(EXITING);
 		}
 		else
-			stopTimer.Set(0);
+			stopTimer.Reset();
 
 		UpdateControls();
 		return;
@@ -1649,10 +1672,10 @@ void cCameraSequence::PlayPTFXAndSound()
 	if (!RequestPTFXAsset(CORE_PTFX_ASSET))
 		return;
 
-	if (playFlashSound && GET_ENTITY_ANIM_CURRENT_TIME(playerPed, cameraClipSet, cameraActionAnim) > 0.5f)
+	if (playFlashSound && GET_ENTITY_ANIM_CURRENT_TIME(GetPlayerPed(), cameraClipSet, cameraActionAnim) > 0.5f)
 	{	
 		StartParticleFxNonLoopedOnEntity(CORE_PTFX_ASSET, ANM_PAPARAZZI_FLASH, flashUnit, 1.0f, -0.04f, -0.06f);
-		PLAY_SOUND_FROM_ENTITY(-1, cameraSound, playerPed, NULL, false, 0);
+		PLAY_SOUND_FROM_ENTITY(-1, cameraSound, GetPlayerPed(), NULL, false, 0);
 		playFlashSound = false;
 	}
 	return;
@@ -1660,7 +1683,7 @@ void cCameraSequence::PlayPTFXAndSound()
 
 void cCameraSequence::PlaySequence()
 {
-	const int rightHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_R_HAND);
+	const int rightHandID = GET_PED_BONE_INDEX(GetPlayerPed(), BONETAG_PH_R_HAND);
 
 	SetPlayerControls(); //Player control should be disabled here and not during the sequence
 
@@ -1669,33 +1692,33 @@ void cCameraSequence::PlaySequence()
 	case INITIALIZED:
 		camera = CreateObject(cameraHash);
 		SET_ENTITY_AS_MISSION_ENTITY(camera, false, true);
-		ATTACH_ENTITY_TO_ENTITY(camera, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+		ATTACH_ENTITY_TO_ENTITY(camera, GetPlayerPed(), rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 
 		flashUnit = CreateObject(flashUnitHash);
 		SET_ENTITY_AS_MISSION_ENTITY(flashUnit, false, true);
 		ATTACH_ENTITY_TO_ENTITY(flashUnit, camera, NULL, 0.107f, 0.025f, 0.177f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 
-		SET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed, cameraClipSet);
+		SET_PED_WEAPON_MOVEMENT_CLIPSET(GetPlayerPed(), cameraClipSet);
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
-			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(GetPlayerPed(), lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 
-		SetAnimSpeed(playerPed, cameraClipSet, cameraActionAnim, 2.0f);
+		SetAnimSpeed(GetPlayerPed(), cameraClipSet, cameraActionAnim, 2.0f);
 		break;
 	case LOOP:
 		break;
 	case TAKE_PHOTO:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, cameraClipSet, cameraActionAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), cameraClipSet, cameraActionAnim, 3))
 		{
 			PlayAnimAndWait(cameraClipSet, cameraActionAnim, upperSecondaryAF, LOOP);
 			playFlashSound = true;
 		}
 		break;
 	case EXITING:
-		RESET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed);
+		RESET_PED_WEAPON_MOVEMENT_CLIPSET(GetPlayerPed());
 		sequenceState = FLUSH_ASSETS;
 		break;
 	case FLUSH_ASSETS:
@@ -1758,7 +1781,7 @@ void cCameraSequence::UpdateControls()
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
-		controlTimer.Set(0);
+		controlTimer.Reset();
 		return;
 	}
 
@@ -1778,7 +1801,7 @@ void cCameraSequence::ForceStop()
 	if (sequenceState == FLUSH_ASSETS || sequenceState == FINISHED)
 		return;
 
-	RESET_PED_WEAPON_MOVEMENT_CLIPSET(playerPed);
+	RESET_PED_WEAPON_MOVEMENT_CLIPSET(GetPlayerPed());
 	shouldStopSequence = false;
 	sequenceState = FLUSH_ASSETS;
 	PlaySequence();
@@ -1791,7 +1814,7 @@ void cCameraSequence::Update()
 {
 	if (sequenceState != FINISHED)
 	{
-		if (!AdditionalChecks(playerPed))
+		if (!AdditionalChecks(GetPlayerPed()))
 		{
 			ForceStop();
 			return;
@@ -1809,7 +1832,7 @@ void cCameraSequence::Update()
 			SetState(EXITING);
 		}
 		else
-			stopTimer.Set(0);
+			stopTimer.Reset();
 
 		UpdateControls();
 		return;
@@ -1834,9 +1857,9 @@ static constexpr char* mobileExitAnim = "exit";
 
 void cMobileTextSequence::StopAllAnims()
 {
-	StopAnimTask(playerPed, mobileEnterAnimDict, mobileEnterAnim);
-	StopAnimTask(playerPed, mobileBaseAnimDict, mobileBaseAnim);
-	StopAnimTask(playerPed, mobileExitAnimDict, mobileExitAnim);
+	StopAnimTask(GetPlayerPed(), mobileEnterAnimDict, mobileEnterAnim);
+	StopAnimTask(GetPlayerPed(), mobileBaseAnimDict, mobileBaseAnim);
+	StopAnimTask(GetPlayerPed(), mobileExitAnimDict, mobileExitAnim);
 	REMOVE_ANIM_DICT(mobileEnterAnimDict);
 	REMOVE_ANIM_DICT(mobileBaseAnimDict);
 	REMOVE_ANIM_DICT(mobileExitAnimDict);
@@ -1845,7 +1868,7 @@ void cMobileTextSequence::StopAllAnims()
 
 void cMobileTextSequence::PlaySequence()
 {
-	const int rightHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_R_HAND);
+	const int rightHandID = GET_PED_BONE_INDEX(GetPlayerPed(), BONETAG_PH_R_HAND);
 
 	SetPlayerControls(); //Player control should be disabled here and not during the sequence
 
@@ -1854,25 +1877,25 @@ void cMobileTextSequence::PlaySequence()
 	case INITIALIZED:
 		item = CreateObject(mobileHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
-		ATTACH_ENTITY_TO_ENTITY(item, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+		ATTACH_ENTITY_TO_ENTITY(item, GetPlayerPed(), rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 		SET_ENTITY_VISIBLE(item, false, false);
 
 		PlayAnimAndWait(mobileEnterAnimDict, mobileEnterAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, LOOP, 0.0f, SLOW_BLEND_IN, SLOWEST_BLEND_OUT);
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
-			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(GetPlayerPed(), lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 
-		if (GET_ENTITY_ANIM_CURRENT_TIME(playerPed, mobileEnterAnimDict, mobileEnterAnim) > 0.225f)
+		if (GET_ENTITY_ANIM_CURRENT_TIME(GetPlayerPed(), mobileEnterAnimDict, mobileEnterAnim) > 0.225f)
 			SET_ENTITY_VISIBLE(item, true, false);
 
-		if (GET_ENTITY_ANIM_CURRENT_TIME(playerPed, mobileExitAnimDict, mobileExitAnim) > 0.6f)
+		if (GET_ENTITY_ANIM_CURRENT_TIME(GetPlayerPed(), mobileExitAnimDict, mobileExitAnim) > 0.6f)
 			DeleteEntity(&item);
 		break;
 	case LOOP:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, mobileBaseAnimDict, mobileBaseAnim, 3))
-			PlayAnimTask(playerPed, mobileBaseAnimDict, mobileBaseAnim, upperSecondaryAF | AF_LOOPING, 0.0f, INSTANT_BLEND_IN, SLOWEST_BLEND_OUT);
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), mobileBaseAnimDict, mobileBaseAnim, 3))
+			PlayAnimTask(GetPlayerPed(), mobileBaseAnimDict, mobileBaseAnim, upperSecondaryAF | AF_LOOPING, 0.0f, INSTANT_BLEND_IN, SLOWEST_BLEND_OUT);
 		break;
 	case EXITING:
 		PlayAnimAndWait(mobileExitAnimDict, mobileExitAnim, upperSecondaryAF, FLUSH_ASSETS, 0.0f, INSTANT_BLEND_IN);
@@ -1907,8 +1930,8 @@ void cMobileTextSequence::PlaySequence()
 
 void cMobileTextSequence::SetState(int state)
 {
-	if (IS_ENTITY_PLAYING_ANIM(playerPed, mobileEnterAnimDict, mobileEnterAnim, 3) ||
-		IS_ENTITY_PLAYING_ANIM(playerPed, mobileExitAnimDict, mobileExitAnim, 3))
+	if (IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), mobileEnterAnimDict, mobileEnterAnim, 3) ||
+		IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), mobileExitAnimDict, mobileExitAnim, 3))
 		return;
 
 	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
@@ -1932,7 +1955,7 @@ void cMobileTextSequence::UpdateControls()
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
-		controlTimer.Set(0);
+		controlTimer.Reset();
 		return;
 	}
 
@@ -1959,7 +1982,7 @@ void cMobileTextSequence::Update()
 {
 	if (sequenceState != FINISHED)
 	{
-		if (!AdditionalChecks(playerPed))
+		if (!AdditionalChecks(GetPlayerPed()))
 		{
 			ForceStop();
 			return;
@@ -1977,7 +2000,7 @@ void cMobileTextSequence::Update()
 			SetState(EXITING);
 		}
 		else
-			stopTimer.Set(0);
+			stopTimer.Reset();
 
 		UpdateControls();
 		return;
@@ -2003,9 +2026,9 @@ static constexpr char* torchExitAnim = "exit";
 
 void cShineTorchSequence::StopAllAnims()
 {
-	StopAnimTask(playerPed, torchEnterAnimDict, torchEnterAnim);
-	StopAnimTask(playerPed, torchBaseAnimDict, torchBaseAnim);
-	StopAnimTask(playerPed, torchExitAnimDict, torchExitAnim);
+	StopAnimTask(GetPlayerPed(), torchEnterAnimDict, torchEnterAnim);
+	StopAnimTask(GetPlayerPed(), torchBaseAnimDict, torchBaseAnim);
+	StopAnimTask(GetPlayerPed(), torchExitAnimDict, torchExitAnim);
 	REMOVE_ANIM_DICT(torchEnterAnimDict);
 	REMOVE_ANIM_DICT(torchBaseAnimDict);
 	REMOVE_ANIM_DICT(torchExitAnimDict);
@@ -2014,7 +2037,7 @@ void cShineTorchSequence::StopAllAnims()
 
 void cShineTorchSequence::PlaySequence()
 {
-	const int leftHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_L_HAND);
+	const int leftHandID = GET_PED_BONE_INDEX(GetPlayerPed(), BONETAG_PH_L_HAND);
 
 	SetPlayerControls(); //Player control should be disabled here and not during the sequence
 
@@ -2023,25 +2046,25 @@ void cShineTorchSequence::PlaySequence()
 	case INITIALIZED:
 		item = CreateObject(torchHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
-		ATTACH_ENTITY_TO_ENTITY(item, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 90.0f, true, true, false, false, 2, true);
+		ATTACH_ENTITY_TO_ENTITY(item, GetPlayerPed(), leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 90.0f, true, true, false, false, 2, true);
 		SET_ENTITY_VISIBLE(item, false, false);
 
 		PlayAnimAndWait(torchEnterAnimDict, torchEnterAnim, upperSecondaryAF, LOOP, 0.0f, SLOW_BLEND_IN, SLOWEST_BLEND_OUT);
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
-			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(GetPlayerPed(), lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 
-		if (GET_ENTITY_ANIM_CURRENT_TIME(playerPed, torchEnterAnimDict, torchEnterAnim) > 0.35f)
+		if (GET_ENTITY_ANIM_CURRENT_TIME(GetPlayerPed(), torchEnterAnimDict, torchEnterAnim) > 0.35f)
 			SET_ENTITY_VISIBLE(item, true, false);
 
-		if (GET_ENTITY_ANIM_CURRENT_TIME(playerPed, torchExitAnimDict, torchExitAnim) > 0.55f)
+		if (GET_ENTITY_ANIM_CURRENT_TIME(GetPlayerPed(), torchExitAnimDict, torchExitAnim) > 0.55f)
 			DeleteEntity(&item);
 		break;
 	case LOOP:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, torchBaseAnimDict, torchBaseAnim, 3))
-			PlayAnimTask(playerPed, torchBaseAnimDict, torchBaseAnim, upperSecondaryAF | AF_LOOPING, 0.0f, INSTANT_BLEND_IN, SLOWEST_BLEND_OUT);
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), torchBaseAnimDict, torchBaseAnim, 3))
+			PlayAnimTask(GetPlayerPed(), torchBaseAnimDict, torchBaseAnim, upperSecondaryAF | AF_LOOPING, 0.0f, INSTANT_BLEND_IN, SLOWEST_BLEND_OUT);
 
 		Vector3 loc = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(item, 0.0f, -0.21f, 0.0f);
 		Vector3 dir = GET_ENTITY_FORWARD_VECTOR(item); dir.x *= -1.0f; dir.y *= -1.0f; dir.z *= -1.0f;
@@ -2080,8 +2103,8 @@ void cShineTorchSequence::PlaySequence()
 
 void cShineTorchSequence::SetState(int state)
 {
-	if (IS_ENTITY_PLAYING_ANIM(playerPed, torchEnterAnimDict, torchEnterAnim, 3) ||
-		IS_ENTITY_PLAYING_ANIM(playerPed, torchExitAnimDict, torchExitAnim, 3))
+	if (IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), torchEnterAnimDict, torchEnterAnim, 3) ||
+		IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), torchExitAnimDict, torchExitAnim, 3))
 		return;
 
 	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
@@ -2105,7 +2128,7 @@ void cShineTorchSequence::UpdateControls()
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
-		controlTimer.Set(0);
+		controlTimer.Reset();
 		return;
 	}
 
@@ -2132,7 +2155,7 @@ void cShineTorchSequence::Update()
 {
 	if (sequenceState != FINISHED)
 	{
-		if (!AdditionalChecks(playerPed))
+		if (!AdditionalChecks(GetPlayerPed()))
 		{
 			ForceStop();
 			return;
@@ -2150,7 +2173,7 @@ void cShineTorchSequence::Update()
 			SetState(EXITING);
 		}
 		else
-			stopTimer.Set(0);
+			stopTimer.Reset();
 
 		UpdateControls();
 		return;
@@ -2172,8 +2195,8 @@ static constexpr char* curlBarIdleAnim = "idle_a";
 
 void cLiftCurlBarSequence::StopAllAnims()
 {
-	StopAnimTask(playerPed, curlBarBaseAnimDict, curlBarBaseAnim);
-	StopAnimTask(playerPed, curlBarIdleAnimDict, curlBarIdleAnim);
+	StopAnimTask(GetPlayerPed(), curlBarBaseAnimDict, curlBarBaseAnim);
+	StopAnimTask(GetPlayerPed(), curlBarIdleAnimDict, curlBarIdleAnim);
 	REMOVE_ANIM_DICT(curlBarBaseAnimDict);
 	REMOVE_ANIM_DICT(curlBarIdleAnimDict);
 	return;
@@ -2181,7 +2204,7 @@ void cLiftCurlBarSequence::StopAllAnims()
 
 void cLiftCurlBarSequence::PlaySequence()
 {
-	const int rightHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_R_HAND);
+	const int rightHandID = GET_PED_BONE_INDEX(GetPlayerPed(), BONETAG_PH_R_HAND);
 
 	SetPlayerControls(); //Player control should be disabled here and not during the sequence
 
@@ -2190,22 +2213,22 @@ void cLiftCurlBarSequence::PlaySequence()
 	case INITIALIZED:
 		item = CreateObject(curlBarHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
-		ATTACH_ENTITY_TO_ENTITY(item, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+		ATTACH_ENTITY_TO_ENTITY(item, GetPlayerPed(), rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 
 		PlayAnimAndWait(curlBarBaseAnimDict, curlBarBaseAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, HOLD, 0.0f, SLOW_BLEND_IN, SLOWEST_BLEND_OUT);
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
-			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(GetPlayerPed(), lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 		break;
 	case LIFT:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, curlBarBaseAnimDict, curlBarBaseAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), curlBarBaseAnimDict, curlBarBaseAnim, 3))
 			PlayAnimAndWait(curlBarBaseAnimDict, curlBarBaseAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, HOLD, 0.0f, INSTANT_BLEND_IN, SLOWEST_BLEND_OUT);
 		break;
 	case HOLD:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, curlBarIdleAnimDict, curlBarIdleAnim, 3))
-			PlayAnimTask(playerPed, curlBarIdleAnimDict, curlBarIdleAnim, upperSecondaryAF | AF_LOOPING, 0.0f, INSTANT_BLEND_IN, SLOWEST_BLEND_OUT);
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), curlBarIdleAnimDict, curlBarIdleAnim, 3))
+			PlayAnimTask(GetPlayerPed(), curlBarIdleAnimDict, curlBarIdleAnim, upperSecondaryAF | AF_LOOPING, 0.0f, INSTANT_BLEND_IN, SLOWEST_BLEND_OUT);
 		break;
 	case EXITING:
 		StopAllAnims();
@@ -2241,7 +2264,7 @@ void cLiftCurlBarSequence::PlaySequence()
 
 void cLiftCurlBarSequence::SetState(int state)
 {
-	if (IS_ENTITY_PLAYING_ANIM(playerPed, curlBarBaseAnimDict, curlBarBaseAnim, 3))
+	if (IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), curlBarBaseAnimDict, curlBarBaseAnim, 3))
 		return;
 
 	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
@@ -2265,7 +2288,7 @@ void cLiftCurlBarSequence::UpdateControls()
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
-		controlTimer.Set(0);
+		controlTimer.Reset();
 		return;
 	}
 
@@ -2297,7 +2320,7 @@ void cLiftCurlBarSequence::Update()
 {
 	if (sequenceState != FINISHED)
 	{
-		if (!AdditionalChecks(playerPed))
+		if (!AdditionalChecks(GetPlayerPed()))
 		{
 			ForceStop();
 			return;
@@ -2315,7 +2338,7 @@ void cLiftCurlBarSequence::Update()
 			SetState(EXITING);
 		}
 		else
-			stopTimer.Set(0);
+			stopTimer.Reset();
 
 		UpdateControls();
 		return;
@@ -2342,9 +2365,9 @@ static constexpr char* binocularsExitAnim = "exit";
 
 void cBinocularsSequence::StopAllAnims()
 {
-	StopAnimTask(playerPed, binocularsEnterAnimDict, binocularsEnterAnim);
-	StopAnimTask(playerPed, binocularsBaseAnimDict, binocularsBaseAnim);
-	StopAnimTask(playerPed, binocularsExitAnimDict, binocularsExitAnim);
+	StopAnimTask(GetPlayerPed(), binocularsEnterAnimDict, binocularsEnterAnim);
+	StopAnimTask(GetPlayerPed(), binocularsBaseAnimDict, binocularsBaseAnim);
+	StopAnimTask(GetPlayerPed(), binocularsExitAnimDict, binocularsExitAnim);
 	REMOVE_ANIM_DICT(binocularsEnterAnimDict);
 	REMOVE_ANIM_DICT(binocularsBaseAnimDict);
 	REMOVE_ANIM_DICT(binocularsExitAnimDict);
@@ -2353,7 +2376,7 @@ void cBinocularsSequence::StopAllAnims()
 
 void cBinocularsSequence::PlaySequence()
 {
-	const int rightHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_R_HAND);
+	const int rightHandID = GET_PED_BONE_INDEX(GetPlayerPed(), BONETAG_PH_R_HAND);
 
 	SetPlayerControls(); //Player control should be disabled here and not during the sequence
 
@@ -2362,28 +2385,28 @@ void cBinocularsSequence::PlaySequence()
 	case INITIALIZED:
 		item = CreateObject(binocularsHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
-		ATTACH_ENTITY_TO_ENTITY(item, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+		ATTACH_ENTITY_TO_ENTITY(item, GetPlayerPed(), rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 
 		PlayAnimAndWait(binocularsEnterAnimDict, binocularsEnterAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, LOOP, 0.0f, SLOW_BLEND_IN, SLOWEST_BLEND_OUT);
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
-			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(GetPlayerPed(), lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 
-		if (GET_ENTITY_ANIM_CURRENT_TIME(playerPed, binocularsExitAnimDict, binocularsExitAnim) > 0.9f)
+		if (GET_ENTITY_ANIM_CURRENT_TIME(GetPlayerPed(), binocularsExitAnimDict, binocularsExitAnim) > 0.9f)
 			DeleteEntity(&item);
 		break;
 	case LOOP:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, binocularsBaseAnimDict, binocularsBaseAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), binocularsBaseAnimDict, binocularsBaseAnim, 3))
 		{
-			PlayAnimTask(playerPed, binocularsBaseAnimDict, binocularsBaseAnim, upperSecondaryAF | AF_LOOPING, 0.0f, INSTANT_BLEND_IN, SLOWEST_BLEND_OUT);
-			TASK_LOOK_AT_ENTITY(playerPed, item, -1, SLF_NARROW_YAW_LIMIT | SLF_NARROW_PITCH_LIMIT | SLF_SLOW_TURN_RATE, 2);
+			PlayAnimTask(GetPlayerPed(), binocularsBaseAnimDict, binocularsBaseAnim, upperSecondaryAF | AF_LOOPING, 0.0f, INSTANT_BLEND_IN, SLOWEST_BLEND_OUT);
+			TASK_LOOK_AT_ENTITY(GetPlayerPed(), item, -1, SLF_NARROW_YAW_LIMIT | SLF_NARROW_PITCH_LIMIT | SLF_SLOW_TURN_RATE, 2);
 		}
 		break;
 	case EXITING:
 		PlayAnimAndWait(binocularsExitAnimDict, binocularsExitAnim, upperSecondaryAF, FLUSH_ASSETS, 0.0f, INSTANT_BLEND_IN);
-		TASK_CLEAR_LOOK_AT(playerPed);
+		TASK_CLEAR_LOOK_AT(GetPlayerPed());
 		break;
 	case FLUSH_ASSETS:
 		DeleteEntity(&item);
@@ -2415,8 +2438,8 @@ void cBinocularsSequence::PlaySequence()
 
 void cBinocularsSequence::SetState(int state)
 {
-	if (IS_ENTITY_PLAYING_ANIM(playerPed, binocularsEnterAnimDict, binocularsEnterAnim, 3) ||
-		IS_ENTITY_PLAYING_ANIM(playerPed, binocularsExitAnimDict, binocularsExitAnim, 3))
+	if (IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), binocularsEnterAnimDict, binocularsEnterAnim, 3) ||
+		IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), binocularsExitAnimDict, binocularsExitAnim, 3))
 		return;
 
 	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
@@ -2440,7 +2463,7 @@ void cBinocularsSequence::UpdateControls()
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
-		controlTimer.Set(0);
+		controlTimer.Reset();
 		return;
 	}
 
@@ -2456,7 +2479,7 @@ void cBinocularsSequence::ForceStop()
 		return;
 
 	StopAllAnims();
-	TASK_CLEAR_LOOK_AT(playerPed);
+	TASK_CLEAR_LOOK_AT(GetPlayerPed());
 	DeleteEntity(&item);
 	shouldStopSequence = false;
 	sequenceState = FLUSH_ASSETS;
@@ -2468,7 +2491,7 @@ void cBinocularsSequence::Update()
 {
 	if (sequenceState != FINISHED)
 	{
-		if (!AdditionalChecks(playerPed))
+		if (!AdditionalChecks(GetPlayerPed()))
 		{
 			ForceStop();
 			return;
@@ -2486,7 +2509,7 @@ void cBinocularsSequence::Update()
 			SetState(EXITING);
 		}
 		else
-			stopTimer.Set(0);
+			stopTimer.Reset();
 
 		UpdateControls();
 		return;
@@ -2522,14 +2545,14 @@ int cHoldBumSignSequence::GetBumSignPropHash() const
 
 void cHoldBumSignSequence::StopAllAnims()
 {
-	StopAnimTask(playerPed, bumSignAnimDict, bumSignBaseAnim);
+	StopAnimTask(GetPlayerPed(), bumSignAnimDict, bumSignBaseAnim);
 	REMOVE_ANIM_DICT(bumSignAnimDict);
 	return;
 }
 
 void cHoldBumSignSequence::PlaySequence()
 {
-	const int rightHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_R_HAND);
+	const int rightHandID = GET_PED_BONE_INDEX(GetPlayerPed(), BONETAG_PH_R_HAND);
 
 	SetPlayerControls(); //Player control should be disabled here and not during the sequence
 
@@ -2538,13 +2561,13 @@ void cHoldBumSignSequence::PlaySequence()
 	case INITIALIZED:
 		item = CreateObject(itemHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
-		ATTACH_ENTITY_TO_ENTITY(item, playerPed, rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
-		PlayAnimTask(playerPed, bumSignAnimDict, bumSignBaseAnim, upperSecondaryAF | AF_LOOPING);
+		ATTACH_ENTITY_TO_ENTITY(item, GetPlayerPed(), rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+		PlayAnimTask(GetPlayerPed(), bumSignAnimDict, bumSignBaseAnim, upperSecondaryAF | AF_LOOPING);
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
-			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(GetPlayerPed(), lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 		break;
 	case LOOP:
@@ -2585,7 +2608,7 @@ void cHoldBumSignSequence::PlaySequence()
 
 void cHoldBumSignSequence::SetState(int state)
 {
-	StopAnimTask(playerPed, bumSignAnimDict, bumSignBaseAnim);
+	StopAnimTask(GetPlayerPed(), bumSignAnimDict, bumSignBaseAnim);
 
 	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
 		sequenceState = EXITING;
@@ -2608,7 +2631,7 @@ void cHoldBumSignSequence::UpdateControls()
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
-		controlTimer.Set(0);
+		controlTimer.Reset();
 		return;
 	}
 
@@ -2635,7 +2658,7 @@ void cHoldBumSignSequence::Update()
 {
 	if (sequenceState != FINISHED)
 	{
-		if (!AdditionalChecks(playerPed))
+		if (!AdditionalChecks(GetPlayerPed()))
 		{
 			ForceStop();
 			return;
@@ -2653,7 +2676,7 @@ void cHoldBumSignSequence::Update()
 			SetState(EXITING);
 		}
 		else
-			stopTimer.Set(0);
+			stopTimer.Reset();
 
 		UpdateControls();
 		return;
@@ -2672,14 +2695,14 @@ static constexpr char* fishingBaseAnim = "base";
 
 void cFishingSequence::StopAllAnims()
 {
-	StopAnimTask(playerPed, fishingAnimDict, fishingBaseAnim);
+	StopAnimTask(GetPlayerPed(), fishingAnimDict, fishingBaseAnim);
 	REMOVE_ANIM_DICT(fishingAnimDict);
 	return;
 }
 
 void cFishingSequence::PlaySequence()
 {
-	const int leftHandID = GET_PED_BONE_INDEX(playerPed, BONETAG_PH_L_HAND);
+	const int leftHandID = GET_PED_BONE_INDEX(GetPlayerPed(), BONETAG_PH_L_HAND);
 
 	SetPlayerControls(); //Player control should be disabled here and not during the sequence
 
@@ -2688,13 +2711,13 @@ void cFishingSequence::PlaySequence()
 	case INITIALIZED:
 		item = CreateObject(fishingRodHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
-		ATTACH_ENTITY_TO_ENTITY(item, playerPed, leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
-		PlayAnimTask(playerPed, fishingAnimDict, fishingBaseAnim, upperSecondaryAF | AF_LOOPING);
+		ATTACH_ENTITY_TO_ENTITY(item, GetPlayerPed(), leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
+		PlayAnimTask(GetPlayerPed(), fishingAnimDict, fishingBaseAnim, upperSecondaryAF | AF_LOOPING);
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
-		if (!IS_ENTITY_PLAYING_ANIM(playerPed, lastAnimDict, lastAnim, 3) ||
-			HAS_ENTITY_ANIM_FINISHED(playerPed, lastAnimDict, lastAnim, 3))
+		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), lastAnimDict, lastAnim, 3) ||
+			HAS_ENTITY_ANIM_FINISHED(GetPlayerPed(), lastAnimDict, lastAnim, 3))
 			sequenceState = nextSequenceState;
 		break;
 	case LOOP:
@@ -2732,7 +2755,7 @@ void cFishingSequence::PlaySequence()
 
 void cFishingSequence::SetState(int state)
 {
-	StopAnimTask(playerPed, fishingAnimDict, fishingBaseAnim);
+	StopAnimTask(GetPlayerPed(), fishingAnimDict, fishingBaseAnim);
 
 	if (state == EXITING && sequenceState != WAITING_FOR_ANIMATION_TO_END && sequenceState != EXITING && sequenceState != FLUSH_ASSETS && sequenceState != FINISHED)
 		sequenceState = EXITING;
@@ -2755,7 +2778,7 @@ void cFishingSequence::UpdateControls()
 
 	if (IS_DISABLED_CONTROL_JUST_PRESSED(control, input))
 	{
-		controlTimer.Set(0);
+		controlTimer.Reset();
 		return;
 	}
 
@@ -2782,7 +2805,7 @@ void cFishingSequence::Update()
 {
 	if (sequenceState != FINISHED)
 	{
-		if (!AdditionalChecks(playerPed))
+		if (!AdditionalChecks(GetPlayerPed()))
 		{
 			ForceStop();
 			return;
@@ -2800,7 +2823,7 @@ void cFishingSequence::Update()
 			SetState(EXITING);
 		}
 		else
-			stopTimer.Set(0);
+			stopTimer.Reset();
 
 		UpdateControls();
 		return;

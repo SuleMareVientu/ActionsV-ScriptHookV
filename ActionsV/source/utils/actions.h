@@ -39,7 +39,7 @@ public:
 	int GetState() const { return sequenceState; }
 	void Stop() { shouldStopSequence = true; return; }
 	bool ShouldStop() const { return shouldStopSequence; }
-	virtual void Update() { return; }
+	virtual void Update() = 0;
 
 protected:
 	int sequenceState = NULL;
@@ -61,12 +61,27 @@ protected:
 	int maxStopTimer = 10000;
 
 	char* instructionalButtonsText = NULL;
-	ControlType control = PLAYER_CONTROL;
-	ControlAction input = INPUT_JUMP;
+	eControlType control = PLAYER_CONTROL;
+	eControlAction input = INPUT_JUMP;
 	Timer controlTimer;
 	short holdTime = 250;
 
 	void PlayAnimAndWait(char *animDict, char *anim, int flag, int nextState, float startPhase = 0.0f, float blendInSpeed = SLOW_BLEND_IN, float blendOutSpeed = SLOW_BLEND_OUT, bool standStill = false, int duration = -1);
+	void PlayScriptedAnimAndWait(
+		const int nextState,
+		char* animDict = "",
+		char* anim = "",
+		const float phase = 0.0f,
+		const float rate = 1.0f,
+		const float weight = 1.0f,
+		const int type = APT_EMPTY,
+		const int filter = 0,
+		const float blendInDelta = NORMAL_BLEND_DURATION,
+		const float blendOutDelta = NORMAL_BLEND_DURATION,
+		const int timeToPlay = -1,
+		const int flags = AF_DEFAULT,
+		const int ikFlags = AIK_NONE,
+		const bool standStill = false);
 	void SetPlayerControls();
 	void SetPedMovementAndReactions() const;
 };
@@ -101,6 +116,7 @@ private:
 	int hasExhaledNose = NULL;
 	void PlayPTFX();
 
+	bool releasedArmAnim = false;
 	void PlaySequence();
 
 	bool GetAnimHold(char **animDict, char **anim);

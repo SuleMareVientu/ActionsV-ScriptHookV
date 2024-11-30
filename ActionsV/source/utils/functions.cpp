@@ -5,20 +5,6 @@
 #include "functions.h"
 #include "..\script.h"
 
-//Custom implementation of TIMERA and TIMERB natives
-#pragma region Timer
-void Timer::Set(int value)
-{
-	gameTimer = GET_GAME_TIMER() + value;
-	return;
-}
-
-int Timer::Get() const
-{
-	return (GET_GAME_TIMER() - gameTimer);
-}
-#pragma endregion
-
 #pragma region Ped Flags
 void EnablePedConfigFlag(Ped ped, int flag)
 {
@@ -446,6 +432,24 @@ void AddScaleformInstructionalButton(int iButtonSlotControl, int iButtonSlotInpu
 #pragma endregion
 
 #pragma region Misc
+AnimData nullAnimData;
+AnimData animData;
+void PlayScriptedAnim(const Ped ped, const char* dictionary0, const char* anim0, const float phase0, const float rate0, const float weight0, const int type, const int filter, const float blendInDelta, const float blendOutDelta, const int timeToPlay, const int flags, const int ikFlags)
+{
+	SetAnimData(animData,
+		dictionary0, anim0, phase0, rate0, weight0,
+		type, filter, blendInDelta, blendOutDelta, timeToPlay, flags, ikFlags);
+	TASK_SCRIPTED_ANIMATION(
+		ped,
+		reinterpret_cast<int*>(&animData),
+		reinterpret_cast<int*>(&nullAnimData),
+		reinterpret_cast<int*>(&nullAnimData),
+		blendInDelta,
+		blendOutDelta
+	);
+	return;
+}
+
 bool SetAnimSpeed(Entity entity, const char* animDict, const char* animName, float speedMultiplier)
 {
 	if (IS_ENTITY_PLAYING_ANIM(entity, animDict, animName, 3))

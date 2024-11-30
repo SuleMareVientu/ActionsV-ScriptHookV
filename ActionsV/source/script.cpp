@@ -8,17 +8,12 @@
 #include "utils\functions.h"
 #include "utils\actions.h"
 
-Player player = NULL;
-Ped playerPed = NULL;
-
 static void update()
 {
-	player = PLAYER_ID();
-	playerPed = PLAYER_PED_ID();
 	UpdateMenu();
 
 	// Check if player ped exists and control is on (e.g. not in a cutscene)
-	if (!ENTITY::DOES_ENTITY_EXIST(playerPed) || !IS_PLAYER_CONTROL_ON(player))
+	if (!ENTITY::DOES_ENTITY_EXIST(GetPlayerPed())) // || !IS_PLAYER_CONTROL_ON(GetPlayer()))
 		return;
 
 	UpdateSequences();

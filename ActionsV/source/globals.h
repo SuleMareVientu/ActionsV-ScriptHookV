@@ -5,13 +5,37 @@
 
 typedef struct { int R, G, B, A; } RGBA;
 
+constexpr unsigned int Joaat(const char* str)
+{
+	if (str == nullptr || *str == '\0')
+		return 0;
+
+	unsigned int hash = 0;
+	for (unsigned long long i = 0; str[i] != '\0'; ++i)
+	{
+		unsigned char b = static_cast<unsigned char>(str[i]);
+		if (b >= 'A' && b <= 'Z')
+			b = b | 1 << 5; // Convert to lowercase
+		else if (b == '\\')
+			b = '/';
+
+		hash += b;
+		hash += hash << 10;
+		hash ^= hash >> 6;
+	}
+
+	// Finalize hash
+	hash += hash << 3;
+	hash ^= hash >> 11;
+	hash += hash << 15;
+	return hash;
+}
+
 //Globals
-extern Player player;
-extern Ped playerPed;
 extern bool showScaleformInstructionalButtons;
 
 //Constants
-constexpr Hash WEAPON_UNARMED = -1569615261;
+constexpr Hash WEAPON_UNARMED = Joaat("WEAPON_UNARMED");
 
 //Ped move blend ratios
 constexpr float PEDMOVEBLENDRATIO_STILL = 0.0f;
@@ -37,7 +61,7 @@ constexpr float INSTANT_BLEND_IN = 1000.0f;		// 0frms
 constexpr float INSTANT_BLEND_OUT = -1000.0f;	// 0frms
 
 //Enums
-enum HUDComponent {
+enum eHUDComponent {
 	HUD_WANTED_STARS = 1,
 	HUD_WEAPON_ICON,
 	HUD_CASH,
@@ -60,7 +84,7 @@ enum HUDComponent {
 	HUD_WEAPON_WHEEL_STATS
 };
 
-enum TextFonts {
+enum eTextFonts {
 	FONT_STANDARD = 0,
 	FONT_CURSIVE,
 	FONT_ROCKSTAR_TAG,
@@ -72,14 +96,14 @@ enum TextFonts {
 	FONT_STYLE_TAXI
 };
 
-enum DropStyle {
+enum eDropStyle {
 	DROPSTYLE_NONE = 0,
 	DROPSTYLE_ALL = 1,
 	DROPSTYLE_OUTLINEONLY = 2,
 	DROPSTYLE_DROPSHADOWONLY = 3
 };
 
-enum GFXDrawOrder {
+enum eGFXDrawOrder {
 	GFX_ORDER_BEFORE_HUD_PRIORITY_LOW = 0,
 	GFX_ORDER_BEFORE_HUD,  // standard
 	GFX_ORDER_BEFORE_HUD_PRIORITY_HIGH,
@@ -93,7 +117,7 @@ enum GFXDrawOrder {
 	GFX_ORDER_AFTER_FADE_PRIORITY_HIGH
 };
 
-enum StandardTextType {
+enum eStandardTextType {
 	TEXTTYPE_TS_TITLE = 0,
 	TEXTTYPE_TS_TITLESMALL,
 	//  TEXTTYPE_TS_STANDARDTINY,
@@ -136,12 +160,12 @@ enum StandardTextType {
 };
 
 struct TextStyle {
-	TextFonts aFont;
+	eTextFonts aFont;
 	float XScale, YScale;
 	RGBA colour;
-	DropStyle drop;
+	eDropStyle drop;
 	float WrapStartX, WrapEndX;
-	StandardTextType aTextType;
+	eStandardTextType aTextType;
 };
 
 struct TextPlacement {
@@ -161,7 +185,7 @@ struct ScaleformInstructionalButtons {
 	int ButtonCount = 0;
 };
 
-enum CombatAttribute {
+enum eCombatAttribute {
 	CA_INVALID = -1,
 	CA_USE_COVER = 0,
 	CA_USE_VEHICLE = 1,
@@ -247,7 +271,7 @@ enum CombatAttribute {
 	CA_BLOCK_FIRE_FOR_VEHICLE_PASSENGER_MOUNTED_GUNS = 90
 };
 
-enum PedBoneTag {
+enum ePedBoneTag {
 	BONETAG_NULL = -1,
 
 	BONETAG_ROOT = 0,
@@ -311,7 +335,7 @@ enum PedBoneTag {
 	BONETAG_PH_R_HAND = 28422
 };
 
-enum PedFlag {
+enum ePedFlag {
 	//Ped Config Flags
 	PCF_PhoneDisableTextingAnimations = 242,
 	PCF_PhoneDisableTalkingAnimations = 243,
@@ -325,7 +349,7 @@ enum PedFlag {
 	PRF_DisableSecondaryAnimationTasks = 58
 };
 
-enum AnimationFlag
+enum eAnimationFlags
 {
 	AF_DEFAULT = 0,
 	AF_LOOPING = 1,
@@ -365,7 +389,231 @@ constexpr int defaultAF = AF_NOT_INTERRUPTABLE | AF_TAG_SYNC_IN | AF_TAG_SYNC_OU
 constexpr int upperAF = AF_NOT_INTERRUPTABLE | AF_UPPERBODY | AF_TAG_SYNC_IN | AF_TAG_SYNC_OUT | AF_HIDE_WEAPON | AF_ABORT_ON_WEAPON_DAMAGE | AF_EXIT_AFTER_INTERRUPTED;
 constexpr int upperSecondaryAF = AF_NOT_INTERRUPTABLE | AF_UPPERBODY | AF_TAG_SYNC_CONTINUOUS | AF_SECONDARY | AF_HIDE_WEAPON | AF_ABORT_ON_WEAPON_DAMAGE | AF_EXIT_AFTER_INTERRUPTED;
 
-enum ScriptLookFlag
+union scrValue
+{
+	int Int;
+	unsigned int Uns;
+	float Float;
+	const char* String;
+	scrValue* Reference;
+	unsigned long long Any;
+	bool operator==(const scrValue &val) { return Int == val.Int; }
+};
+
+enum eAnimPriorityFlags {
+	AF_PRIORITY_LOW = 0,
+	AF_PRIORITY_MEDIUM = 1,
+	AF_PRIORITY_HIGH = 2
+};
+
+enum eIKControlFlags {
+	AIK_NONE = 0,
+	AIK_DISABLE_LEG_IK = 1,
+	AIK_DISABLE_ARM_IK = 2,
+	AIK_DISABLE_HEAD_IK = 4,
+	AIK_DISABLE_TORSO_IK = 8,
+	AIK_DISABLE_TORSO_REACT_IK = 16,
+	AIK_USE_LEG_ALLOW_TAGS = 32,
+	AIK_USE_LEG_BLOCK_TAGS = 64,
+	AIK_USE_ARM_ALLOW_TAGS = 128,
+	AIK_USE_ARM_BLOCK_TAGS = 256,
+	AIK_PROCESS_WEAPON_HAND_GRIP = 512,
+	AIK_USE_FP_ARM_LEFT = 1024,
+	AIK_USE_FP_ARM_RIGHT = 2048,
+	AIK_DISABLE_TORSO_VEHICLE_IK = 4096,
+	AIK_LINKED_FACIAL = 8192
+};
+
+constexpr float SLOW_BLEND_DURATION = 0.25f;
+constexpr float NORMAL_BLEND_DURATION = 0.125f;
+constexpr float FAST_BLEND_DURATION = 0.0625f;
+constexpr float INSTANT_BLEND_DURATION = 0.0f;
+
+enum eAnimationPlaybackType {
+	APT_EMPTY = 0,
+	APT_SINGLE_ANIM = 1,
+	APT_3_WAY_BLEND = 2
+};
+
+struct AnimData {
+	AnimData(
+		const char* aDictionary0 = "",
+		const char* aAnim0 = "",
+		const float aPhase0 = 0.0f,
+		const float aRate0 = 1.0f,
+		const float aWeight0 = 1.0f,
+
+		const int aType = APT_EMPTY,
+		const int aFilter = 0,
+		const float aBlendInDelta = NORMAL_BLEND_DURATION,
+		const float aBlendOutDelta = NORMAL_BLEND_DURATION,
+		const int aTimeToPlay = -1,
+		const int aFlags = AF_DEFAULT,
+		const int aIkFlags = AIK_NONE,
+
+		const char* aDictionary1 = "",
+		const char* aAnim1 = "",
+		const float aPhase1 = 0.0f,
+		const float aRate1 = 1.0f,
+		const float aWeight1 = 1.0f,
+
+		const char* aDictionary2 = "",
+		const char* aAnim2 = "",
+		const float aPhase2 = 0.0f,
+		const float aRate2 = 1.0f,
+		const float aWeight2 = 1.0f
+	)
+	{
+		dictionary0.String = aDictionary0;
+		anim0.String = aAnim0;
+		phase0.Float = aPhase0;
+		rate0.Float = aRate0;
+		weight0.Float = aWeight0;
+
+		type.Int = aType;
+		filter.Int = aFilter;
+		blendInDelta.Float = aBlendInDelta;
+		blendOutDelta.Float = aBlendOutDelta;
+		timeToPlay.Int = aTimeToPlay;
+		flags.Int = aFlags;
+		ikFlags.Int = aIkFlags;
+
+		dictionary1.String = aDictionary1;
+		anim1.String = aAnim1;
+		phase1.Float = aPhase1;
+		rate1.Float = aRate1;
+		weight1.Float = aWeight1;
+
+		dictionary2.String = aDictionary2;
+		anim2.String = aAnim2;
+		phase2.Float = aPhase2;
+		rate2.Float = aRate2;
+		weight2.Float = aWeight2;
+	}
+
+	/* Int */    scrValue type;
+
+	/* String */ scrValue dictionary0;
+	/* String */ scrValue anim0;
+	/* Float */	 scrValue phase0;
+	/* Float */  scrValue rate0;
+	/* Float */  scrValue weight0;
+
+	/* String */ scrValue dictionary1;
+	/* String */ scrValue anim1;
+	/* Float */	 scrValue phase1;
+	/* Float */  scrValue rate1;
+	/* Float */  scrValue weight1;
+
+	/* String */ scrValue dictionary2;
+	/* String */ scrValue anim2;
+	/* Float */	 scrValue phase2;
+	/* Float */  scrValue rate2;
+	/* Float */  scrValue weight2;
+
+	/* Int */    scrValue filter;			//eg. GET_HASH_KEY("BONEMASK_HEAD_NECK_AND_ARMS")
+	/* Float */  scrValue blendInDelta;
+	/* Float */	 scrValue blendOutDelta;
+	/* Int */    scrValue timeToPlay;
+	/* Int */    scrValue flags;
+	/* Int */    scrValue ikFlags;
+};
+
+inline constexpr void SetAnimData(
+	AnimData &data,
+	const char* dictionary0 = "",
+	const char* anim0 = "",
+	const float phase0 = 0.0f,
+	const float rate0 = 1.0f,
+	const float weight0 = 1.0f,
+
+	const int type = APT_EMPTY,
+	const int filter = 0,
+	const float blendInDelta = NORMAL_BLEND_DURATION,
+	const float blendOutDelta = NORMAL_BLEND_DURATION,
+	const int timeToPlay = -1,
+	const int flags = AF_DEFAULT,
+	const int ikFlags = AIK_NONE,
+
+	const char* dictionary1 = "",
+	const char* anim1 = "",
+	const float phase1 = 0.0f,
+	const float rate1 = 1.0f,
+	const float weight1 = 1.0f,
+
+	const char* dictionary2 = "",
+	const char* anim2 = "",
+	const float phase2 = 0.0f,
+	const float rate2 = 1.0f,
+	const float weight2 = 1.0f
+)
+{
+	data.dictionary0.String = dictionary0;
+	data.anim0.String = anim0;
+	data.phase0.Float = phase0;
+	data.rate0.Float = rate0;
+	data.weight0.Float = weight0;
+
+	data.type.Int = type;
+	data.filter.Int = filter;
+	data.blendInDelta.Float = blendInDelta;
+	data.blendOutDelta.Float = blendOutDelta;
+	data.timeToPlay.Int = timeToPlay;
+	data.flags.Int = flags;
+	data.ikFlags.Int = ikFlags;
+
+	data.dictionary1.String = dictionary1;
+	data.anim1.String = anim1;
+	data.phase1.Float = phase1;
+	data.rate1.Float = rate1;
+	data.weight1.Float = weight1;
+
+	data.dictionary2.String = dictionary2;
+	data.anim2.String = anim2;
+	data.phase2.Float = phase2;
+	data.rate2.Float = rate2;
+	data.weight2.Float = weight2;
+	return;
+}
+
+enum eAnimFilters {
+	BONEMASK_ALL = Joaat("BONEMASK_ALL"),
+	BONEMASK_ARMONLY_L = Joaat("BONEMASK_ARMONLY_L"),
+	BONEMASK_ARMONLY_R = Joaat("BONEMASK_ARMONLY_R"),
+	BONEMASK_ARMS = Joaat("BONEMASK_ARMS"),
+	BONEMASK_BODYONLY = Joaat("BONEMASK_BODYONLY"),
+	BONEMASK_HEADONLY = Joaat("BONEMASK_HEADONLY"),
+	BONEMASK_HEAD_NECK_AND_ARMS = Joaat("BONEMASK_HEAD_NECK_AND_ARMS"),
+	BONEMASK_HEAD_NECK_AND_L_ARM = Joaat("BONEMASK_HEAD_NECK_AND_L_ARM"),
+	BONEMASK_HEAD_NECK_AND_R_ARM = Joaat("BONEMASK_HEAD_NECK_AND_R_ARM"),
+	BONEMASK_LOD_LO = Joaat("BONEMASK_LOD_LO"),
+	BONEMASK_SPINEONLY = Joaat("BONEMASK_SPINEONLY"),
+	BONEMASK_SPINE_FEATHERED = Joaat("BONEMASK_SPINE_FEATHERED"),
+	BONEMASK_UPPERONLY = Joaat("BONEMASK_UPPERONLY"),
+	FILTER_ARMSHEADNOMOVER = Joaat("ArmsHeadNoMover_filter"),
+	FILTER_BOTHARMS = Joaat("BothArms_filter"),
+	FILTER_BOTHARMS_NOSPINE = Joaat("BothArms__NoSpine_filter"),
+	FILTER_GRIP_R_ONLY = Joaat("Grip_R_Only_filter"),
+	FILTER_IGNOREMOVERBLEND = Joaat("IgnoreMoverBlend_filter"),
+	FILTER_IGNOREMOVERBLENDROTATIONONLY = Joaat("IgnoreMoverBlendRotationOnly_filter"),
+	FILTER_LEGSONLY = Joaat("LegsOnly_filter"),
+	FILTER_LOWERBODY = Joaat("Lowerbody_filter"),
+	FILTER_MOVERONLY = Joaat("MoverOnly_Filter"),
+	FILTER_NOMOVER = Joaat("NoMover_filter"),
+	FILTER_ROOTONLY = Joaat("RootOnly_filter"),
+	FILTER_ROOTUPPERBODY = Joaat("RootUpperbody_filter"),
+	FILTER_UPPERBODYNOARM = Joaat("UpperBodyNoArms_filter"),
+	FILTER_UPPERBODYANDIK = Joaat("UpperbodyAndIk_filter"),
+	FILTER_UPPERBODYFEATHERED_NOLEFTTARM = Joaat("UpperbodyFeathered_NoLefttArm_filter"),
+	FILTER_UPPERBODYFEATHERED_NORIGHTARM = Joaat("UpperbodyFeathered_NoRightArm_filter"),
+	FILTER_UPPERBODYFEATHERED = Joaat("UpperbodyFeathered_filter"),
+	FILTER_UPPERBODYNOMOVER = Joaat("UpperbodyNoMover_filter"),
+	FILTER_UPPERBODY = Joaat("Upperbody_filter"),
+	FILTER_UPPERBODY_FROM_SPINE3 = Joaat("Upperbody_from_Spine3_filter"),
+	FILTER_UPPERBODYBICYCLE_DRIVEBY = Joaat("UpperBodyBicycleDriveby_filter")
+};
+
+enum eScriptLookFlag
 {
 	SLF_DEFAULT = 0,
 	SLF_SLOW_TURN_RATE = 1,
@@ -387,7 +635,7 @@ enum ScriptLookFlag
 	SLF_USE_REF_DIR_ABSOLUTE = 65536
 };
 
-enum AlternateAnimType
+enum eAlternateAnimType
 {
 	AAT_IDLE,
 	AAT_WALK,
@@ -395,13 +643,13 @@ enum AlternateAnimType
 	AAT_SPRINT
 };
 
-enum ControlType {
+enum eControlType {
 	PLAYER_CONTROL = 0,
 	CAMERA_CONTROL,
 	FRONTEND_CONTROL
 };
 
-enum ControlAction {
+enum eControlAction {
 	INPUT_NEXT_CAMERA = 0,
 	INPUT_LOOK_LR,
 	INPUT_LOOK_UD,
