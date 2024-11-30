@@ -99,6 +99,8 @@ void cSequence::PlayScriptedAnimAndWait(const int nextState, char* animDict, cha
 
 void cSequence::SetPlayerControls()
 {
+	SET_CURRENT_PED_WEAPON(GetPlayerPed(), WEAPON_UNARMED, true);
+
 	//Hide Phone and mobile browser
 	if (!disabledControlsLastFrame)
 	{
@@ -1080,7 +1082,7 @@ void cGuitarSequence::PlaySequence()
 		item = CreateObject(guitarHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
 		ATTACH_ENTITY_TO_ENTITY(item, GetPlayerPed(), leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
-		PlayAnimTask(GetPlayerPed(), guitarAnimDict, guitarBaseAnim, upperSecondaryAF | AF_LOOPING);
+		PlayScriptedAnim(GetPlayerPed(), guitarAnimDict, guitarBaseAnim, 0.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, BONEMASK_ARMS, NORMAL_BLEND_DURATION, NORMAL_BLEND_DURATION, -1, upperSecondaryAF | AF_LOOPING);
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
@@ -1235,7 +1237,7 @@ void cBongosSequence::PlaySequence()
 		item = CreateObject(bongosHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
 		ATTACH_ENTITY_TO_ENTITY(item, GetPlayerPed(), leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
-		PlayAnimTask(GetPlayerPed(), bongosAnimDict, bongosBaseAnim, upperSecondaryAF | AF_LOOPING);
+		PlayScriptedAnim(GetPlayerPed(), bongosAnimDict, bongosBaseAnim, 0.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, BONEMASK_ARMS, NORMAL_BLEND_DURATION, NORMAL_BLEND_DURATION, -1, upperSecondaryAF | AF_LOOPING);
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
@@ -1713,7 +1715,7 @@ void cCameraSequence::PlaySequence()
 	case TAKE_PHOTO:
 		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), cameraClipSet, cameraActionAnim, 3))
 		{
-			PlayAnimAndWait(cameraClipSet, cameraActionAnim, upperSecondaryAF, LOOP);
+			PlayScriptedAnimAndWait(LOOP, cameraClipSet, cameraActionAnim, 0.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, BONEMASK_HEAD_NECK_AND_ARMS, NORMAL_BLEND_DURATION, NORMAL_BLEND_DURATION, -1, upperSecondaryAF);
 			playFlashSound = true;
 		}
 		break;
@@ -1880,7 +1882,7 @@ void cMobileTextSequence::PlaySequence()
 		ATTACH_ENTITY_TO_ENTITY(item, GetPlayerPed(), rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 		SET_ENTITY_VISIBLE(item, false, false);
 
-		PlayAnimAndWait(mobileEnterAnimDict, mobileEnterAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, LOOP, 0.0f, SLOW_BLEND_IN, SLOWEST_BLEND_OUT);
+		PlayScriptedAnimAndWait(LOOP, mobileEnterAnimDict, mobileEnterAnim, 0.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, BONEMASK_HEAD_NECK_AND_ARMS, 0.5f, 5.0f, -1, upperSecondaryAF | AF_HOLD_LAST_FRAME);
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
 		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), lastAnimDict, lastAnim, 3) ||
@@ -1895,10 +1897,10 @@ void cMobileTextSequence::PlaySequence()
 		break;
 	case LOOP:
 		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), mobileBaseAnimDict, mobileBaseAnim, 3))
-			PlayAnimTask(GetPlayerPed(), mobileBaseAnimDict, mobileBaseAnim, upperSecondaryAF | AF_LOOPING, 0.0f, INSTANT_BLEND_IN, SLOWEST_BLEND_OUT);
+			PlayScriptedAnim(GetPlayerPed(), mobileBaseAnimDict, mobileBaseAnim, 0.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, BONEMASK_HEAD_NECK_AND_ARMS, NORMAL_BLEND_DURATION, 5.0f, -1, upperSecondaryAF | AF_LOOPING);
 		break;
 	case EXITING:
-		PlayAnimAndWait(mobileExitAnimDict, mobileExitAnim, upperSecondaryAF, FLUSH_ASSETS, 0.0f, INSTANT_BLEND_IN);
+		PlayScriptedAnimAndWait(FLUSH_ASSETS, mobileExitAnimDict, mobileExitAnim, 0.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, BONEMASK_HEAD_NECK_AND_ARMS, NORMAL_BLEND_DURATION, 0.5f, -1, upperSecondaryAF);
 		break;
 	case FLUSH_ASSETS:
 		DeleteEntity(&item);
@@ -2049,7 +2051,7 @@ void cShineTorchSequence::PlaySequence()
 		ATTACH_ENTITY_TO_ENTITY(item, GetPlayerPed(), leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 90.0f, true, true, false, false, 2, true);
 		SET_ENTITY_VISIBLE(item, false, false);
 
-		PlayAnimAndWait(torchEnterAnimDict, torchEnterAnim, upperSecondaryAF, LOOP, 0.0f, SLOW_BLEND_IN, SLOWEST_BLEND_OUT);
+		PlayScriptedAnimAndWait(LOOP, torchEnterAnimDict, torchEnterAnim, 0.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, BONEMASK_HEAD_NECK_AND_ARMS, 0.5f, 5.0f, -1, upperSecondaryAF);
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
 		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), lastAnimDict, lastAnim, 3) ||
@@ -2064,14 +2066,14 @@ void cShineTorchSequence::PlaySequence()
 		break;
 	case LOOP:
 		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), torchBaseAnimDict, torchBaseAnim, 3))
-			PlayAnimTask(GetPlayerPed(), torchBaseAnimDict, torchBaseAnim, upperSecondaryAF | AF_LOOPING, 0.0f, INSTANT_BLEND_IN, SLOWEST_BLEND_OUT);
+			PlayScriptedAnim(GetPlayerPed(), torchBaseAnimDict, torchBaseAnim, 0.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, BONEMASK_ARMONLY_L, NORMAL_BLEND_DURATION, 5.0f, -1, upperSecondaryAF | AF_LOOPING);
 
-		Vector3 loc = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(item, 0.0f, -0.21f, 0.0f);
+		Vector3 loc = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(item, 0.0f, -0.25f, 0.0f);
 		Vector3 dir = GET_ENTITY_FORWARD_VECTOR(item); dir.x *= -1.0f; dir.y *= -1.0f; dir.z *= -1.0f;
 		DRAW_SHADOWED_SPOT_LIGHT(loc.x, loc.y, loc.z, dir.x, dir.y, dir.z, 255, 255, 255, 7.5f, 0.25f, 20.0f, 25.0f, 7.5f, 0);
 		break;
 	case EXITING:
-		PlayAnimAndWait(torchExitAnimDict, torchExitAnim, upperSecondaryAF, FLUSH_ASSETS, 0.0f, INSTANT_BLEND_IN);
+		PlayScriptedAnimAndWait(FLUSH_ASSETS, torchExitAnimDict, torchExitAnim, 0.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, BONEMASK_HEAD_NECK_AND_ARMS, NORMAL_BLEND_DURATION, 0.5f, -1, upperSecondaryAF);
 		break;
 	case FLUSH_ASSETS:
 		DeleteEntity(&item);
@@ -2215,7 +2217,7 @@ void cLiftCurlBarSequence::PlaySequence()
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
 		ATTACH_ENTITY_TO_ENTITY(item, GetPlayerPed(), rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 
-		PlayAnimAndWait(curlBarBaseAnimDict, curlBarBaseAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, HOLD, 0.0f, SLOW_BLEND_IN, SLOWEST_BLEND_OUT);
+		PlayScriptedAnimAndWait(HOLD, curlBarBaseAnimDict, curlBarBaseAnim, 0.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, BONEMASK_ARMS, NORMAL_BLEND_DURATION, 5.0f, -1, upperSecondaryAF | AF_HOLD_LAST_FRAME);
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
 		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), lastAnimDict, lastAnim, 3) ||
@@ -2224,11 +2226,11 @@ void cLiftCurlBarSequence::PlaySequence()
 		break;
 	case LIFT:
 		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), curlBarBaseAnimDict, curlBarBaseAnim, 3))
-			PlayAnimAndWait(curlBarBaseAnimDict, curlBarBaseAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, HOLD, 0.0f, INSTANT_BLEND_IN, SLOWEST_BLEND_OUT);
+			PlayScriptedAnimAndWait(HOLD, curlBarBaseAnimDict, curlBarBaseAnim, 0.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, BONEMASK_ARMS, NORMAL_BLEND_DURATION, 5.0f, -1, upperSecondaryAF | AF_HOLD_LAST_FRAME);
 		break;
 	case HOLD:
 		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), curlBarIdleAnimDict, curlBarIdleAnim, 3))
-			PlayAnimTask(GetPlayerPed(), curlBarIdleAnimDict, curlBarIdleAnim, upperSecondaryAF | AF_LOOPING, 0.0f, INSTANT_BLEND_IN, SLOWEST_BLEND_OUT);
+			PlayScriptedAnim(GetPlayerPed(), curlBarIdleAnimDict, curlBarIdleAnim, 0.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, BONEMASK_ARMS, NORMAL_BLEND_DURATION, 5.0f, -1, upperSecondaryAF | AF_LOOPING);
 		break;
 	case EXITING:
 		StopAllAnims();
@@ -2387,7 +2389,7 @@ void cBinocularsSequence::PlaySequence()
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
 		ATTACH_ENTITY_TO_ENTITY(item, GetPlayerPed(), rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
 
-		PlayAnimAndWait(binocularsEnterAnimDict, binocularsEnterAnim, upperSecondaryAF | AF_HOLD_LAST_FRAME, LOOP, 0.0f, SLOW_BLEND_IN, SLOWEST_BLEND_OUT);
+		PlayScriptedAnimAndWait(LOOP, binocularsEnterAnimDict, binocularsEnterAnim, 0.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, BONEMASK_HEAD_NECK_AND_ARMS, 0.5f, 5.0f, -1, upperSecondaryAF | AF_HOLD_LAST_FRAME);
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
 		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), lastAnimDict, lastAnim, 3) ||
@@ -2400,12 +2402,12 @@ void cBinocularsSequence::PlaySequence()
 	case LOOP:
 		if (!IS_ENTITY_PLAYING_ANIM(GetPlayerPed(), binocularsBaseAnimDict, binocularsBaseAnim, 3))
 		{
-			PlayAnimTask(GetPlayerPed(), binocularsBaseAnimDict, binocularsBaseAnim, upperSecondaryAF | AF_LOOPING, 0.0f, INSTANT_BLEND_IN, SLOWEST_BLEND_OUT);
+			PlayScriptedAnim(GetPlayerPed(), binocularsBaseAnimDict, binocularsBaseAnim, 0.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, BONEMASK_HEAD_NECK_AND_ARMS, NORMAL_BLEND_DURATION, 5.0f, -1, upperSecondaryAF | AF_LOOPING);
 			TASK_LOOK_AT_ENTITY(GetPlayerPed(), item, -1, SLF_NARROW_YAW_LIMIT | SLF_NARROW_PITCH_LIMIT | SLF_SLOW_TURN_RATE, 2);
 		}
 		break;
 	case EXITING:
-		PlayAnimAndWait(binocularsExitAnimDict, binocularsExitAnim, upperSecondaryAF, FLUSH_ASSETS, 0.0f, INSTANT_BLEND_IN);
+		PlayScriptedAnimAndWait(FLUSH_ASSETS, binocularsExitAnimDict, binocularsExitAnim, 0.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, BONEMASK_HEAD_NECK_AND_ARMS, NORMAL_BLEND_DURATION, 0.5f, -1, upperSecondaryAF);
 		TASK_CLEAR_LOOK_AT(GetPlayerPed());
 		break;
 	case FLUSH_ASSETS:
@@ -2562,7 +2564,7 @@ void cHoldBumSignSequence::PlaySequence()
 		item = CreateObject(itemHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
 		ATTACH_ENTITY_TO_ENTITY(item, GetPlayerPed(), rightHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
-		PlayAnimTask(GetPlayerPed(), bumSignAnimDict, bumSignBaseAnim, upperSecondaryAF | AF_LOOPING);
+		PlayScriptedAnim(GetPlayerPed(), bumSignAnimDict, bumSignBaseAnim, 0.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, BONEMASK_ARMS, NORMAL_BLEND_DURATION, NORMAL_BLEND_DURATION, -1, upperSecondaryAF | AF_LOOPING);
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
@@ -2712,7 +2714,7 @@ void cFishingSequence::PlaySequence()
 		item = CreateObject(fishingRodHash);
 		SET_ENTITY_AS_MISSION_ENTITY(item, false, true);
 		ATTACH_ENTITY_TO_ENTITY(item, GetPlayerPed(), leftHandID, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true, true, false, false, 2, true);
-		PlayAnimTask(GetPlayerPed(), fishingAnimDict, fishingBaseAnim, upperSecondaryAF | AF_LOOPING);
+		PlayScriptedAnim(GetPlayerPed(), fishingAnimDict, fishingBaseAnim, 0.0f, 1.0f, 1.0f, APT_SINGLE_ANIM, BONEMASK_ARMS, NORMAL_BLEND_DURATION, NORMAL_BLEND_DURATION, -1, upperSecondaryAF | AF_LOOPING);
 		sequenceState = LOOP;
 		break;
 	case WAITING_FOR_ANIMATION_TO_END:
