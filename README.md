@@ -1,45 +1,46 @@
-# ActionsV-ScriptHookV [![License: GPL v3][GPL-3.0-shield]][GPL-3.0] [![GitHub all releases](https://img.shields.io/github/downloads/SuleMareVientu/ActionsV-ScriptHookV/total?label=Total%20Downloads&logo=GitHub)](https://github.com/SuleMareVientu/ActionsV-ScriptHookV/releases/latest)
+[![License: GPL v3][GPL-3.0-shield]][GPL-3.0] [![GitHub all releases](https://img.shields.io/github/downloads/SuleMareVientu/ActionsV-ScriptHookV/total?label=Total%20Downloads&logo=GitHub)](https://github.com/SuleMareVientu/ActionsV-ScriptHookV/releases/latest)
 ![Screenshot](https://github.com/SuleMareVientu/ActionsV-ScriptHookV/blob/images/ActionsV.png?raw=true)  
-This mod allows you to perform various dynamic tasks, allowing the player to walk and interact with the enviroment normally while performing the action.  
+This mod allows you to perform various dynamic tasks, allowing the player to walk and interact with the environment normally while performing the action.  
 
 The behavior of these "personalized tasks" wants to remain __as truthful to R* immersive vision as possible__.  
 
-**Requires [ScriptHookV](http://www.dev-c.com/gtav/scripthookv/)**
-
-## Controls: 
+## Controls
 Keyboard: **F10 key**;  
 Controller: **L1 + DPAD Left**.  
 
 ## Features
 
-**Actions**:
+**Actions**
 - Smoke Cigarette (interactive)
 - Drink Beer (interactive)
 
-**Hobbies & Activities**:
+**Hobbies & Activities**
 - Play Guitar
 - Play Bongos
-- Use fishing rod
+- Use a fishing rod
 - Lift Weights (interactive)
 - Jog
 
-**Tools & Utilities**:
+**Tools & Utilities**
 - Shine Torch (casts light and shadows)
 - Clipboard
 - Leaf Blower (interactive)
 - Mop
 - Mop with Bucket
 
-**Miscellaneous**:
+**Miscellaneous**
 - Camera (interactive)
 - Mobile Text
 - Binoculars
 - Hold Beggar Sign (4 possible signs)
 
-## Installation: 
-Simply extract the ASI inside the game's root directory (where you have installed GTA:V and Script Hook V, **not** inside the "scripts" folder).
+## Requirement
+[Script Hook V](https://www.dev-c.com/gtav/scripthookv/)
 
-## Credits:
+## Installation
+Copy the 2 files from the ZIP into your game's root directory (where you have GTAV EXE, and Script Hook V files; **not** inside the "scripts" folder).
+
+## Credits
 - Inspired by [Drink & Smoke](https://www.gta5-mods.com/scripts/drink-smoke) by [jedijosh920](https://www.gta5-mods.com/users/jedijosh920)
 - MAFINS - [Menu Base](https://github.com/MAFINS/MenyooSP/)
 - DurtyFree - [GTA V Data dumps](https://github.com/DurtyFree/gta-v-data-dumps/)
