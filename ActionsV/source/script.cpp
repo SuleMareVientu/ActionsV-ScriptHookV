@@ -7,13 +7,14 @@
 #include "globals.h"
 #include "utils\functions.h"
 #include "utils\actions.h"
+#include "utils\ini.h"
 
 static void update()
 {
 	UpdateMenu();
 
-	// Check if player ped exists and control is on (e.g. not in a cutscene)
-	if (!ENTITY::DOES_ENTITY_EXIST(GetPlayerPed())) // || !IS_PLAYER_CONTROL_ON(GetPlayer()))
+	// Check if player ped exists
+	if (!DOES_ENTITY_EXIST(GetPlayerPed()))
 		return;
 
 	UpdateSequences();
@@ -22,6 +23,8 @@ static void update()
 
 void ScriptMain()
 {
+	ReadINI();
+	LoadMenuSettings();
 	while (true)
 	{
 		update();

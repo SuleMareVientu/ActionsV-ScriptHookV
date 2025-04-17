@@ -4,6 +4,8 @@
 //Custom
 #include <string>
 #include "utils\functions.h"
+#include "utils\keyboard.h"
+#include "utils\ini.h"
 #include "utils\actions.h"
 #include "utils\menuEntries.h"
 #include "globals.h"
@@ -27,6 +29,7 @@ enum SUBMENU {
 };
 
 char str[69];
+constexpr int maxPadBinds = 4; static std::string padBinds[maxPadBinds]{};
 bool padInputBool = true, bNULL = false;
 constexpr TextStyle defaultTextStyle = { FONT_STANDARD, 0.35f, 0.35f, RGBA{255, 255, 255, 255}, DROPSTYLE_NONE, 0.0f, 1.0f, TEXTTYPE_TS_STANDARDMEDIUMHUD };
 constexpr RGBA whiteRGB = { 255, 255, 255, 255 };
@@ -208,8 +211,6 @@ public:
 	static unsigned short currentOption;
 	static unsigned short totalOptions;
 	static unsigned short printingOption;
-	static unsigned short breakCount;
-	static unsigned short totalBreaks;
 	static unsigned char breakScroll;
 	static short currentSubArrayIndex;
 	static int currentSubArray[20];
@@ -381,20 +382,8 @@ public:
 
 		// Draw background
 		DrawSprite(txd, "gradient_bgd", GetMenuX(), bg_Y, 0.20f, bg_length, 0.0f, RGBA{255, 255, 255, 200});
-		//DrawRect(GetMenuX(), bg_Y, 0.20f, bg_length, backgroundCol);
 
-		// Draw scroller indicator rect
-		if (totalOptions > 14) tmpY = 14.0f; else tmpY = static_cast<float>(totalOptions);
-		float scr_rect_Y = ((tmpY + 1.0f) * menuOptionYMult) + GetMenuY() + 0.0415f;
-		DrawRect(GetMenuX(), scr_rect_Y, 0.20f, 0.0345f, backgroundCol);
-
-		// Draw thin line over scroller indicator rect
-		if (totalOptions < 14)
-			DrawRect(GetMenuX(), static_cast<float>(totalOptions) * menuOptionYMult + GetMenuY() + 0.06f, 0.20f, 0.0022f, whiteRGB);
-		else
-			DrawRect(GetMenuX(), 14.0f * menuOptionYMult + GetMenuY() + 0.06f, 0.20f, 0.0022f, whiteRGB);
-
-		// Draw scroller indicator
+		// Draw option arrows
 		if ((totalOptions > 14))
 		{
 			constexpr char* tx1 = "shop_arrows_upanddown";
@@ -409,15 +398,6 @@ public:
 			else
 				DrawSprite(txd, tx1, GetMenuX(), tmpY, width, GetSpriteHeight(txd, tx1, width), 0.0f, titleBoxCol);
 		}
-
-		// Draw option count
-		TextStyle tmpStyle = defaultTextStyle; tmpStyle.aFont = FONT_STANDARD; tmpStyle.XScale = 0.0f; tmpStyle.YScale = 0.26f; tmpStyle.colour = optionCountCol;
-		SetTextStyle(tmpStyle);
-
-		BEGIN_TEXT_COMMAND_DISPLAY_TEXT("CM_ITEM_COUNT");
-		ADD_TEXT_COMPONENT_INTEGER(currentOption);
-		ADD_TEXT_COMPONENT_INTEGER(totalOptions);
-		END_TEXT_COMMAND_DISPLAY_TEXT(GetMenuX() + 0.0605f, scr_rect_Y - 0.009f, 0);
 	}
 
 	static void DrawHighlightedOption()
@@ -434,17 +414,28 @@ public:
 
 	static bool isBinds()
 	{
+		if (IsKeyJustUp(INI::MenuKey))
+			return true;
+
 		// Open menu - DPAD Left + LB / F10
-		if (IS_USING_KEYBOARD_AND_MOUSE(NULL))
+		if (!IS_USING_KEYBOARD_AND_MOUSE(NULL))
 		{
-			if (IS_DISABLED_CONTROL_JUST_PRESSED(PLAYER_CONTROL, INPUT_DROP_AMMO))
-				return true;
-		}
-		else
-		{
-			if ((IS_DISABLED_CONTROL_JUST_PRESSED(FRONTEND_CONTROL, INPUT_FRONTEND_LEFT) && IS_DISABLED_CONTROL_PRESSED(FRONTEND_CONTROL, INPUT_FRONTEND_LB)) ||
-				(IS_DISABLED_CONTROL_PRESSED(FRONTEND_CONTROL, INPUT_FRONTEND_LEFT) && IS_DISABLED_CONTROL_JUST_PRESSED(FRONTEND_CONTROL, INPUT_FRONTEND_LB)))
-				return true;
+			bool res = true; bool justPressed = false;
+			LOOP(i, maxPadBinds)
+			{
+				if (!padBinds[i].empty())
+				{
+					const int bind = GetPadControlFromString(padBinds[i]);
+					if (bind < 0)
+						continue;
+
+					if (!IS_DISABLED_CONTROL_PRESSED(FRONTEND_CONTROL, bind))
+						res = false;
+					else if (IS_DISABLED_CONTROL_JUST_PRESSED(FRONTEND_CONTROL, bind))
+						justPressed = true;
+				}
+			}
+			return (res && justPressed);
 		}
 
 		return false;
@@ -468,7 +459,6 @@ public:
 	static void WhileOpened()
 	{
 		totalOptions = printingOption; printingOption = 0;
-		totalBreaks = breakCount; breakCount = 0; breakScroll = 0;
 
 		if (IS_PAUSE_MENU_ACTIVE()) SetSubClosed();
 		if (IS_GAMEPLAY_HINT_ACTIVE()) STOP_GAMEPLAY_HINT(false);
@@ -513,25 +503,21 @@ public:
 	{
 		currentOption--;
 		PlayDefaultSoundFrontend("NAV_UP_DOWN");
-		breakScroll = 1;
 	}
 	static void Down()
 	{
 		currentOption++;
 		PlayDefaultSoundFrontend("NAV_UP_DOWN");
-		breakScroll = 2;
 	}
 	static void Bottom()
 	{
 		currentOption = totalOptions;
 		PlayDefaultSoundFrontend("NAV_UP_DOWN");
-		breakScroll = 3;
 	}
 	static void Top()
 	{
 		currentOption = 1;
 		PlayDefaultSoundFrontend("NAV_UP_DOWN");
-		breakScroll = 4;
 	}
 
 	static void SetSubPrevious()
@@ -566,9 +552,6 @@ unsigned short Menu::previousSubmenu = SUBMENU::CLOSED;
 unsigned short Menu::currentOption = 0;
 unsigned short Menu::totalOptions = 0;
 unsigned short Menu::printingOption = 0;
-unsigned short Menu::breakCount = 0;
-unsigned short Menu::totalBreaks = 0;
-unsigned char Menu::breakScroll = 0;
 short Menu::currentSubArrayIndex = 0;
 int Menu::currentSubArray[20] = {};
 int Menu::currenTopArray[20] = {};
@@ -990,6 +973,16 @@ void Menu::SubmenuHandler()
 
 		WhileOpened();
 	}
+}
+
+void LoadMenuSettings()
+{
+	SplitString(INI::MenuBinds, padBinds, maxPadBinds);
+	Menu::bit_centre_title = INI::CentreMenuTitle;
+	Menu::bit_centre_options = INI::CentreMenuOptions;
+	showScaleformInstructionalButtons = INI::ShowTooltips;
+	menuXOffset = INI::MenuXOffset;
+	menuYOffset = INI::MenuYOffset;
 }
 
 void UpdateMenu()
