@@ -6,6 +6,7 @@
 #include "..\script.h"
 #include <unordered_map>
 #include <sstream>
+#include <algorithm>
 
 #pragma region Ped Flags
 void EnablePedConfigFlag(Ped ped, int flag)
@@ -516,7 +517,9 @@ static const std::unordered_map<std::string, int> mapPadControls = {
 };
 int GetPadControlFromString(const std::string &str)
 {	
-	auto it = mapPadControls.find(str);
+	std::string tmpStr = str;
+	std::transform(tmpStr.begin(), tmpStr.end(), tmpStr.begin(), ::toupper);
+	auto it = mapPadControls.find(tmpStr);
 	if (it != mapPadControls.end())
 		return it->second;
 	else
@@ -565,7 +568,9 @@ static const std::unordered_map<std::string, int> mapVKs = {
 };
 int GetVKFromString(const std::string &str)
 {
-	auto it = mapVKs.find(str);
+	std::string tmpStr = str;
+	std::transform(tmpStr.begin(), tmpStr.end(), tmpStr.begin(), ::toupper);
+	auto it = mapVKs.find(tmpStr);
 	if (it != mapVKs.end())
 		return it->second;
 	else
